@@ -21,6 +21,8 @@ namespace PgSqlViewCreatorHelper
 
         public bool ProcessInputFile()
         {
+            var cachedLines = new List<string>();
+
             try
             {
                 var inputFile = new FileInfo(mOptions.InputScriptFile);
@@ -61,21 +63,36 @@ namespace PgSqlViewCreatorHelper
 
                         if (string.IsNullOrWhiteSpace(dataLine))
                         {
-                            writer.WriteLine();
+                            cachedLines.Add(string.Empty);
                             continue;
                         }
 
 
-                        if (dataLine.Trim().IndexOf("Create View", StringComparison.OrdinalIgnoreCase) < 0)
+                        if (dataLine.Trim().IndexOf("Create View", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            writer.WriteLine(dataLine);
+                            if (cachedLines.Count > 0)
+                            {
+                                var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer);
+                                if (!success)
+                                    return false;
+
+                                cachedLines.Clear();
+                            }
+
+                            cachedLines.Add(dataLine);
                             continue;
                         }
 
-                        var success = ProcessViewDDL(reader, writer, dataLine, tableNameMap, columnNameMap);
+                        cachedLines.Add(dataLine);
+                    }
 
+                    if (cachedLines.Count > 0)
+                    {
+                        var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer);
                         if (!success)
                             return false;
+
+                        cachedLines.Clear();
                     }
                 }
 
@@ -94,18 +111,18 @@ namespace PgSqlViewCreatorHelper
         /// Read the column name map file
         /// </summary>
         /// <param name="mapFile">Tab-delimited text file to read</param>
-        /// <param name="tableNameMap">Dictionary mapping the original (source) table name to new table name in PostgreSQL</param>
-        /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a mapping of original column name to new column name in PostgreSQL</param>
+        /// <param name="tableNameMap">Dictionary mapping the original (source) table names to new table names in PostgreSQL</param>
+        /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a Dictionary of mappings of original column names to new column names in PostgreSQL</param>
         /// <returns></returns>
         private bool LoadMapFile(
             FileSystemInfo mapFile,
-            out Dictionary<string, string> tableNameMap,
-            out Dictionary<string, Dictionary<string, string>> columnNameMap)
+            out Dictionary<string, WordReplacer> tableNameMap,
+            out Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap)
         {
             var linesRead = 0;
 
-            tableNameMap = new Dictionary<string, string>();
-            columnNameMap = new Dictionary<string, Dictionary<string, string>>();
+            tableNameMap = new Dictionary<string, WordReplacer>();
+            columnNameMap = new Dictionary<string, Dictionary<string, WordReplacer>>();
 
             try
             {
@@ -134,29 +151,28 @@ namespace PgSqlViewCreatorHelper
                         var sourceTableName = lineParts[0];
                         var sourceColumnName = lineParts[1];
                         // var schema = lineParts[2];
-                        var newTableName = lineParts[3];
-                        var newColumnName = lineParts[4];
-
+                        var newTableName = PossiblyUnquote(lineParts[3]);
+                        var newColumnName = PossiblyUnquote(lineParts[4]);
 
                         if (!tableNameMap.ContainsKey(sourceTableName))
                         {
-                            tableNameMap.Add(sourceTableName, newTableName);
+                            var replacer = new WordReplacer(sourceTableName, newTableName);
+                            tableNameMap.Add(sourceTableName, replacer);
                         }
 
                         if (!columnNameMap.TryGetValue(newTableName, out var targetTableColumnMap))
                         {
-                            targetTableColumnMap = new Dictionary<string, string>();
+                            targetTableColumnMap = new Dictionary<string, WordReplacer>();
                             columnNameMap.Add(newTableName, targetTableColumnMap);
                         }
 
-                        if (targetTableColumnMap.Values.Contains(newColumnName))
+                        if (targetTableColumnMap.Values.Any(item => item.ReplacementText.Equals(newColumnName)))
                         {
                             OnWarningEvent(string.Format("Table {0} has multiple columns with new name {1}", newTableName, newColumnName));
                         }
 
-                        targetTableColumnMap.Add(sourceColumnName, newColumnName);
-
-
+                        var columnNameReplacer = new WordReplacer(sourceColumnName, PossiblyUnquote(newColumnName));
+                        targetTableColumnMap.Add(sourceColumnName, columnNameReplacer);
                     }
                 }
 
@@ -170,103 +186,98 @@ namespace PgSqlViewCreatorHelper
 
         }
 
+        /// <summary>
+        /// If objectName does not contain any spaces, remove the double quotes surrounding it
+        /// </summary>
+        /// <param name="objectName"></param>
+        /// <returns></returns>
+        private string PossiblyUnquote(string objectName)
         {
+            if (objectName.Contains(' '))
+                return objectName;
 
-
-
-
-                    if (string.IsNullOrWhiteSpace(dataLine))
-                    {
-                        writer.WriteLine();
-                        continue;
-                    }
-
-                    var dataLineTrimEnd = dataLine.TrimEnd();
-
-                    if (dataLineTrimEnd.Trim().IndexOf("FROM", StringComparison.OrdinalIgnoreCase) == 0)
-                    {
-                        parsingSourceColumns = false;
-                        parsingJoins = true;
-                    } else if (dataLineTrimEnd.Trim().IndexOf("WHERE", StringComparison.OrdinalIgnoreCase) == 0)
-                    {
-                        parsingSourceColumns = false;
-                        parsingJoins = false;
-                        parsingWhere = true;
-                    }
-
-                    if (parsingSourceColumns)
-                    {
-                        // Look for a column alias
-                        var aliasMatch = mColumnAliasMatcher.Match(dataLineTrimEnd);
-                        if (aliasMatch.Success)
-                        {
-                            AppendUpdatedLine(writer,
-                                              aliasMatch.Groups["ColumnInfo"].Value,
-                                              tableNameMap,
-                                              columnNameMap,
-                                              aliasMatch.Groups["AliasInfo"].Value);
-                        }
-                        else
-                        {
-                            AppendUpdatedLine(writer,
-                                              dataLineTrimEnd,
-                                              tableNameMap,
-                                              columnNameMap);
-                        }
-
-                    }
-                    // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-                    else if (parsingJoins || parsingWhere)
-                    {
-                        AppendUpdatedLine(writer,
-                                          dataLineTrimEnd,
-                                          tableNameMap,
-                                          columnNameMap);
-                    }
-                    else {
-                        writer.WriteLine(dataLine);
-                    }
-
-
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                OnErrorEvent("Error in ProcessViewDDL", ex);
-                return false;
-            }
-
+            return objectName.Trim('"');
         }
 
-        private void AppendUpdatedLine(
-            TextWriter writer,
-            string ddlText,
-            Dictionary<string, string> tableNameMap,
-            Dictionary<string, Dictionary<string, string>> columnNameMap,
-            string textToAppend = "")
+
+        /// <summary>
+        /// Looks for table names in cachedLines, then uses that information to update column names
+        /// Writes the updated text to disk
+        /// </summary>
+        /// <param name="cachedLines"></param>
+        /// <param name="tableNameMap">Dictionary mapping the original (source) table names to new table names in PostgreSQL</param>
+        /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a Dictionary of mappings of original column names to new column names in PostgreSQL</param>
+        /// <param name="writer"></param>
+        /// <returns></returns>
+        private bool ProcessCachedLines(
+            IEnumerable<string> cachedLines,
+            Dictionary<string, WordReplacer> tableNameMap,
+            Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
+            TextWriter writer)
         {
-            var updatedLine = string.Copy(ddlText);
+            // Keys in this list are the original version of the line
+            // Values are the updated version
+            var updatedLines = new List<KeyValuePair<string, string>>();
 
-            foreach (var item in tableNameMap)
-            {
-                FindAndReplace(ref updatedLine, item.Key, item.Value);
-            }
+            var referencedTables = new SortedSet<string>();
 
-            foreach (var targetTableName in columnNameMap.Keys)
+            // Look for table names in cachedLines, updating as appropriate
+            foreach (var dataLine in cachedLines)
             {
-                foreach (var item in columnNameMap[targetTableName])
+                var workingCopy = string.Copy(dataLine);
+
+                foreach (var item in tableNameMap)
                 {
-                    FindAndReplace(ref updatedLine, item.Key, item.Value);
+                    if (!item.Value.ProcessLine(workingCopy, out var updatedLine))
+                        continue;
+
+                    workingCopy = updatedLine;
+
+                    var updatedTableName = item.Value.ReplacementText;
+                    if (!referencedTables.Contains(updatedTableName))
+                    {
+                        referencedTables.Add(updatedTableName);
+                    }
                 }
+
+                updatedLines.Add(new KeyValuePair<string, string>(dataLine, workingCopy));
             }
 
-            if (!string.Equals(ddlText, updatedLine))
+            // Look for column names in updatedLines, updating as appropriate
+            foreach (var dataLine in updatedLines)
             {
-                OnDebugEvent(string.Format("Updating {0} to \n         {1}", ddlText, updatedLine));
+                var originalLine = dataLine.Key;
+                var workingCopy = string.Copy(dataLine.Value);
+
+                foreach (var updatedTableName in referencedTables)
+                {
+                    foreach (var item in columnNameMap)
+                    {
+                        if (!item.Key.Equals(updatedTableName))
+                            continue;
+
+                        foreach (var columnNameMatcher in item.Value)
+                        {
+                            if (columnNameMatcher.Value.ProcessLine(workingCopy, out var updatedLine))
+                            {
+                                workingCopy = updatedLine;
+                            }
+
+                        }
+                    }
+                }
+
+                if (originalLine.Equals(workingCopy))
+                {
+                    writer.WriteLine(originalLine);
+                    continue;
+                }
+
+                OnDebugEvent(string.Format("Updating {0} \n        to {1}", originalLine, workingCopy));
+                writer.WriteLine(workingCopy);
             }
 
+            return true;
         }
 
     }
