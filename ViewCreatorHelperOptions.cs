@@ -9,7 +9,7 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        public const string PROGRAM_DATE = "October 3, 2019";
+        public const string PROGRAM_DATE = "October 4, 2019";
 
         #region "Properties"
 
