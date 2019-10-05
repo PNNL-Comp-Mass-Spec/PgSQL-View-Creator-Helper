@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using PRISM;
 
 namespace PgSqlViewCreatorHelper
@@ -11,10 +10,6 @@ namespace PgSqlViewCreatorHelper
     {
         private readonly ViewCreatorHelperOptions mOptions;
 
-        private readonly Regex mColumnAliasMatcher;
-
-        private readonly Dictionary<KeyValuePair<string, string>, Regex> mNameReplacer;
-
         /// <summary>
         /// Constructor
         /// </summary>
@@ -22,10 +17,6 @@ namespace PgSqlViewCreatorHelper
         public ViewCreatorHelper(ViewCreatorHelperOptions options)
         {
             mOptions = options;
-
-            mColumnAliasMatcher = new Regex("(?<ColumnInfo>.+ )(?<AliasInfo>AS .+)$", RegexOptions.Compiled);
-
-            mNameReplacer = new Dictionary<KeyValuePair<string, string>, Regex>();
         }
 
         public bool ProcessInputFile()
@@ -179,26 +170,10 @@ namespace PgSqlViewCreatorHelper
 
         }
 
-        private bool ProcessViewDDL(
-            StreamReader reader,
-            TextWriter writer,
-            string createViewLine,
-            Dictionary<string, string> tableNameMap,
-            Dictionary<string, Dictionary<string, string>> columnNameMap
-            )
         {
 
-            try
-            {
-                AppendUpdatedLine(writer, createViewLine, tableNameMap, columnNameMap);
 
-                var parsingSourceColumns = true;
-                var parsingJoins = false;
-                var parsingWhere = false;
 
-                while (!reader.EndOfStream)
-                {
-                    var dataLine = reader.ReadLine();
 
                     if (string.IsNullOrWhiteSpace(dataLine))
                     {
@@ -292,27 +267,7 @@ namespace PgSqlViewCreatorHelper
                 OnDebugEvent(string.Format("Updating {0} to \n         {1}", ddlText, updatedLine));
             }
 
-            if (string.IsNullOrWhiteSpace(textToAppend))
-                writer.WriteLine(updatedLine);
-            else
-                writer.WriteLine(updatedLine + textToAppend);
         }
 
-        private void FindAndReplace(ref string dataLine, string textToFind, string replacementText)
-        {
-
-            var keyToFind = new KeyValuePair<string, string>(textToFind, replacementText.Trim('"'));
-
-            if (!mNameReplacer.TryGetValue(keyToFind, out var wordReplacer))
-            {
-                wordReplacer = new Regex(@"\b" + textToFind + @"\b", RegexOptions.Compiled);
-                mNameReplacer.Add(keyToFind, wordReplacer);
-            }
-
-            if (wordReplacer.IsMatch(dataLine))
-            {
-                dataLine = wordReplacer.Replace(dataLine, replacementText.Trim('"'));
-            }
-        }
     }
 }
