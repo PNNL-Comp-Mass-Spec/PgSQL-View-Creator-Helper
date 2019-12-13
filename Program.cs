@@ -20,9 +20,9 @@ namespace PgSqlViewCreatorHelper
 
             var parser = new CommandLineParser<ViewCreatorHelperOptions>(asmName.Name, version)
             {
-                ProgramInfo = "This program process a SQL DDL file with CREATE VIEW commands and " +
+                ProgramInfo = "This program processes a SQL DDL file with CREATE VIEW commands and " +
                               "renames the column and table names referenced by the views to use " +
-                              "new names defined in a mapping file.",
+                              "new names defined in the mapping files.",
 
                 ContactInfo = "Program written by Matthew Monroe for the Department of Energy" + Environment.NewLine +
                               "(PNNL, Richland, WA) in 2019" +
@@ -34,6 +34,8 @@ namespace PgSqlViewCreatorHelper
                         exeName + @" DBName_unsure.sql /M:DBName_ColumnNameMap.txt"
                     }
             };
+
+            parser.AddParamFileKey("Conf");
 
             var parseResults = parser.ParseArgs(args);
             var options = parseResults.ParsedResults;
