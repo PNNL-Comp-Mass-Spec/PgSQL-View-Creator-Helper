@@ -28,6 +28,10 @@ namespace PgSqlViewCreatorHelper
                        "SourceTableName  SourceColumnName  TargetColumnName")]
         public string ColumnNameMapFile2 { get; set; }
 
+        [Option("Schema", "DefaultSchema", HelpShowsDefault = false,
+            HelpText = "Schema to prefix table names with (when the name does not have a schema)")]
+        public string DefaultSchema { get; set; }
+
         #endregion
 
         /// <summary>
@@ -38,6 +42,7 @@ namespace PgSqlViewCreatorHelper
             InputScriptFile = string.Empty;
             ColumnNameMapFile = string.Empty;
             ColumnNameMapFile2 = string.Empty;
+            DefaultSchema = string.Empty;
         }
 
         /// <summary>
@@ -64,6 +69,15 @@ namespace PgSqlViewCreatorHelper
             if (!string.IsNullOrWhiteSpace(ColumnNameMapFile2))
             {
                 Console.WriteLine(" {0,-45}: {1}", "Secondary column name map file", ColumnNameMapFile2);
+            }
+
+            if (string.IsNullOrWhiteSpace(DefaultSchema))
+            {
+                Console.WriteLine(" {0,-45}: {1}", " Default schema name", "not defined");
+            }
+            else
+            {
+                Console.WriteLine(" {0,-45}: {1}", " Default schema name", DefaultSchema);
             }
 
             Console.WriteLine();

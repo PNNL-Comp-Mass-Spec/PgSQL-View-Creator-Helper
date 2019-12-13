@@ -154,7 +154,8 @@ namespace PgSqlViewCreatorHelper
                         if (lineParts.Length < 5)
                             continue;
 
-                        if (linesRead == 1 && lineParts[0].Equals("SourceTable", StringComparison.OrdinalIgnoreCase) &&
+                        if (linesRead == 1 &&
+                            lineParts[0].Equals("SourceTable", StringComparison.OrdinalIgnoreCase) &&
                             lineParts[1].Equals("SourceName", StringComparison.OrdinalIgnoreCase))
                         {
                             // Header line; skip it
@@ -169,7 +170,7 @@ namespace PgSqlViewCreatorHelper
 
                         if (!tableNameMap.ContainsKey(sourceTableName))
                         {
-                            var replacer = new WordReplacer(sourceTableName, newTableName);
+                            var replacer = new WordReplacer(sourceTableName, newTableName, mOptions.DefaultSchema);
                             tableNameMap.Add(sourceTableName, replacer);
                         }
 
@@ -324,6 +325,7 @@ namespace PgSqlViewCreatorHelper
                     if (!item.Value.ProcessLine(workingCopy, out var updatedLine))
                         continue;
 
+                    // A match to a table name was found
                     workingCopy = updatedLine;
 
                     var updatedTableName = item.Value.ReplacementText;

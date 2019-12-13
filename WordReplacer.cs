@@ -15,22 +15,65 @@ namespace PgSqlViewCreatorHelper
         public string ReplacementText { get; }
 
         /// <summary>
-        /// Regex matcher
+        /// Schema name to place before the word (if no schema exists)
         /// </summary>
-        private readonly Regex mMatcher;
+        /// <remarks>
+        /// For example, given
+        ///   TextToFind=T_MgrType_ParamType_Map
+        ///   ReplacementText="t_mgr_type_param_type_map"
+        ///   DefaultSchema=mc
+        ///
+        /// If the line being analyzed has: LEFT JOIN T_MgrType_ParamType_Map
+        /// it will be changed to:          LEFT JOIN mc."t_mgr_type_param_type_map"
+        /// with the mc. added by this class
+        ///
+        /// However, if the line has:       mc.T_MgrType_ParamType_Map
+        /// It will be changed to:          mc."t_mgr_type_param_type_map"
+        /// where the mc. portion is recognized to already be defined
+        /// </remarks>
+        public string DefaultSchema { get; }
+
+        /// <summary>
+        /// Regex matcher to determine if ReplacementText is preceded by a schema
+        /// </summary>
+        private readonly Regex mSchemaMatcher;
+
+
+        /// <summary>
+        /// Regex matcher to find TextToFind
+        /// </summary>
+        private readonly Regex mWordMatcher;
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="textToFind"></param>
         /// <param name="replacementText"></param>
-        public WordReplacer(string textToFind, string replacementText)
+        /// <param name="defaultSchema"></param>
+        public WordReplacer(string textToFind, string replacementText, string defaultSchema = "")
         {
+
             TextToFind = textToFind;
             ReplacementText = replacementText;
+            DefaultSchema = defaultSchema;
 
             // Configure the matcher to match whole words, and to be case sensitive
-            mMatcher = new Regex(@"\b" + textToFind + @"\b", RegexOptions.Compiled);
+            mWordMatcher = new Regex(@"\b" + textToFind + @"\b", RegexOptions.Compiled);
+
+            if (string.IsNullOrWhiteSpace(defaultSchema))
+            {
+                // Default schema is empty
+                mSchemaMatcher = null;
+            }
+            else if (replacementText.Contains("."))
+            {
+                // The replacement text already has a schema
+                mSchemaMatcher = null;
+            }
+            else
+            {
+                mSchemaMatcher = new Regex(@"\b[^ ]+\." + replacementText, RegexOptions.Compiled);
+            }
         }
 
         /// <summary>
@@ -42,13 +85,25 @@ namespace PgSqlViewCreatorHelper
         /// <returns>True if the line was updated, otherwise false</returns>
         public bool ProcessLine(string dataLine, out string updatedLine)
         {
-            if (!mMatcher.IsMatch(dataLine))
+            if (!mWordMatcher.IsMatch(dataLine))
             {
                 updatedLine = string.Empty;
                 return false;
             }
 
-            updatedLine = mMatcher.Replace(dataLine, ReplacementText);
+            updatedLine = mWordMatcher.Replace(dataLine, ReplacementText);
+
+            if (mSchemaMatcher == null)
+                return true;
+
+            if (mSchemaMatcher.Match(updatedLine).Success)
+            {
+                // A schema is already defined
+                return true;
+            }
+
+            // Add schema
+            updatedLine = updatedLine.Replace(ReplacementText, DefaultSchema + "." + ReplacementText);
             return true;
 
         }
