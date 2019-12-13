@@ -1,8 +1,8 @@
 # PgSQL View Creator Helper
 
-This program process a SQL DDL file with CREATE VIEW commands and renames the
+This program processes a SQL DDL file with CREATE VIEW commands and renames the
 column and table names referenced by the views to use new names defined in a
-mapping file.
+mapping file (or files).
 
 ## Console Switches
 
@@ -11,12 +11,15 @@ PgSqlViewCreatorHelper. is a console application, and must be run from the Windo
 ```
 PgSqlViewCreatorHelper.exe
   /I:InputFilePath
-  /M:MapFilePath
+  /Map:MapFilePath
+  [/Map2:SecondaryMapFilePath]
+  [/Schema:DefaultSchemaName]
+  [/ParamFile:ParamFileName.conf] [/CreateParamFile]
 ```
 
 The input file should be a SQL text file with CREATE VIEW statements
 
-The Map file is a tab-delimited text file with five columns, for example:
+The `/Map` file is is a tab-delimited text file with five columns, for example:
 
 | SourceTable | SourceName  | Schema      | NewTable    | NewName     |
 |-------------|-------------|-------------|-------------|-------------|
@@ -26,14 +29,43 @@ The Map file is a tab-delimited text file with five columns, for example:
 | T_Log_Entries | type | mc | "t_log_entries" | "type" |
 | T_Log_Entries | message | mc | "t_log_entries" | "message" |
 | T_Log_Entries | Entered_By | mc | "t_log_entries" | "entered_by" |
-| T_Mgrs | M_ID | mc | "t_mgrs" | "m_id" |
-| T_Mgrs | M_Name | mc | "t_mgrs" | "m_name" |
-| T_Mgrs | M_TypeID | mc | "t_mgrs" | "m_type_id" |
-| T_Mgrs | M_ParmValueChanged | mc | "t_mgrs" | "m_parm_value_changed" |
-| T_Mgrs | M_ControlFromWebsite | mc | "t_mgrs" | "m_control_from_website" |
-| T_Mgrs | M_Comment | mc | "t_mgrs" | "m_comment" |
+| T_Mgrs | m_id | mc | "t_mgrs" | "m_id"
+| T_Mgrs | m_name | mc | "t_mgrs" | "m_name"
+| T_Mgrs | mgr_type_id | mc | "t_mgrs" | "mgr_type_id"
+| T_Mgrs | param_value_changed | mc | "t_mgrs" | "param_value_changed"
+| T_Mgrs | control_from_website | mc | "t_mgrs" | "control_from_website"
+| T_Mgrs | comment | mc | "t_mgrs" | "comment"
 
 The Map file matches the format created by https://github.com/PNNL-Comp-Mass-Spec/sqlserver2pgsql
+
+Use `/Map2` to optionally specify a secondary map file, which is a tab-delimited text file with three columns, for example:
+
+| SourceTableName | SourceColumnName | TargetColumnName |
+|-----------------|------------------|------------------|
+| T_MgrTypes | mt_typeid | mgr_type_id |
+| T_MgrTypes | mt_typename | mgr_type_name |
+| T_MgrTypes | mt_active | mgr_type_active |
+| T_MgrType_ParamType_Map | MgrTypeID | mgr_type_id |
+| T_MgrType_ParamType_Map | ParamTypeID | param_type_id |
+| T_Mgrs | M_ID | m_id |
+| T_Mgrs | M_Name | m_name |
+| T_Mgrs | M_TypeID | mgr_type_id |
+| T_Mgrs | M_ParmValueChanged | param_value_changed |
+| T_Mgrs | M_ControlFromWebsite | control_from_website |
+| T_Mgrs | M_Comment | comment |
+
+The Secondary Map file matches the file defined for parameter `ColumnMap` when using the DB_Schema_Export_Tool.exe (https://github.com/PNNL-Comp-Mass-Spec/DB-Schema-Export-Tool) to pre-process an existing DDL file
+
+Use `/Schema` to specify a default schema name to add before all table names (that don't already have a schema name prefix)
+
+The processing options can be specified in a parameter file using `/ParamFile:Options.conf` or `/Conf:Options.conf`
+* Define options using the format `ArgumentName=Value`
+* Lines starting with `#` or `;` will be treated as comments
+* Additional arguments on the command line can supplement or override the arguments in the parameter file
+
+Use `/CreateParamFile` to create an example parameter file
+* By default, the example parameter file content is shown at the console
+* To create a file named Options.conf, use `/CreateParamFile:Options.conf`
 
 ## Contacts
 
