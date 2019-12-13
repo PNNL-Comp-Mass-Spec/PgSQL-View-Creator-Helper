@@ -54,6 +54,20 @@ namespace PgSqlViewCreatorHelper
                 if (!mapFileLoaded)
                     return false;
 
+                if (!string.IsNullOrWhiteSpace(mOptions.ColumnNameMapFile2))
+                {
+                    var mapFile2 = new FileInfo(mOptions.ColumnNameMapFile2);
+                    if (!mapFile2.Exists)
+                    {
+                        OnErrorEvent("Secondary column name map file not found: " + mapFile2.FullName);
+                        return false;
+                    }
+
+                    var secondaryMapFileLoaded = LoadSecondaryMapFile(mapFile2, tableNameMap, columnNameMap);
+                    if (!secondaryMapFileLoaded)
+                        return false;
+                }
+
                 using (var reader = new StreamReader(new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (var writer = new StreamWriter(new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read)))
                 {
@@ -103,7 +117,6 @@ namespace PgSqlViewCreatorHelper
                 OnErrorEvent("Error in ProcessInputFile", ex);
                 return false;
             }
-
 
         }
 
@@ -181,6 +194,86 @@ namespace PgSqlViewCreatorHelper
             catch (Exception ex)
             {
                 OnErrorEvent(string.Format("Error in LoadMapFile, reading line {0}", linesRead), ex);
+                return false;
+            }
+
+        }
+
+        private bool LoadSecondaryMapFile(
+            FileSystemInfo mapFile,
+            IReadOnlyDictionary<string, WordReplacer> tableNameMap,
+            IDictionary<string, Dictionary<string, WordReplacer>> columnNameMap
+            )
+        {
+            var linesRead = 0;
+
+            var missingTablesWarned = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            try
+            {
+                using (var reader = new StreamReader(new FileStream(mapFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        var dataLine = reader.ReadLine();
+                        linesRead++;
+
+                        if (string.IsNullOrWhiteSpace(dataLine))
+                            continue;
+
+                        var lineParts = dataLine.Split('\t');
+
+                        if (lineParts.Length < 3)
+                            continue;
+
+                        if (linesRead == 1 &&
+                            lineParts[0].Equals("SourceTableName", StringComparison.OrdinalIgnoreCase) &&
+                            lineParts[1].Equals("SourceColumnName", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Header line; skip it
+                            continue;
+                        }
+
+                        var sourceTableName = lineParts[0];
+                        var sourceColumnName = lineParts[1];
+                        var newColumnName = PossiblyUnquote(lineParts[2]);
+
+                        // Look for the updated table name, as tracked by sourceTableName
+                        if (!tableNameMap.TryGetValue(sourceTableName, out var replacer))
+                        {
+                            if (missingTablesWarned.Contains(sourceTableName))
+                                continue;
+
+                            OnWarningEvent(string.Format("Table {0} not found in tableNameMap", sourceTableName));
+                            missingTablesWarned.Add(sourceTableName);
+                            continue;
+                        }
+
+                        var newTableName = replacer.ReplacementText;
+
+                        if (!columnNameMap.TryGetValue(newTableName, out var targetTableColumnMap))
+                        {
+                            targetTableColumnMap = new Dictionary<string, WordReplacer>();
+                            columnNameMap.Add(newTableName, targetTableColumnMap);
+                        }
+
+                        if (targetTableColumnMap.ContainsKey(sourceColumnName))
+                        {
+                            // The column rename map has already been defined; this is OK
+                            OnDebugEvent(string.Format("Column mapping already defined for {0} in table {1}", sourceColumnName, sourceTableName));
+                            continue;
+                        }
+
+                        var columnNameReplacer = new WordReplacer(sourceColumnName, PossiblyUnquote(newColumnName));
+                        targetTableColumnMap.Add(sourceColumnName, columnNameReplacer);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                OnErrorEvent(string.Format("Error in LoadSecondaryMapFile, reading line {0}", linesRead), ex);
                 return false;
             }
 

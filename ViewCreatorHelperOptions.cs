@@ -13,11 +13,20 @@ namespace PgSqlViewCreatorHelper
 
         #region "Properties"
 
-        [Option("I", "Input", ArgPosition = 1, HelpShowsDefault = false, HelpText = "SQL script file to process")]
+        [Option("Input", "I", ArgPosition = 1, HelpShowsDefault = false, IsInputFilePath = true,
+            HelpText = "SQL script file to process")]
         public string InputScriptFile { get; set; }
 
-        [Option("M", "Map", ArgPosition = 2, HelpShowsDefault = false, HelpText = "Column name map file; tab-delimited file with five columns: SourceTable SourceName Schema NewTable NewName")]
+        [Option("Map", "M", ArgPosition = 2, HelpShowsDefault = false, IsInputFilePath = true,
+            HelpText = "Column name map file (typically created by sqlserver2pgsql.pl); tab-delimited file with five columns:\n" +
+                       "SourceTable  SourceName  Schema  NewTable  NewName")]
         public string ColumnNameMapFile { get; set; }
+
+        [Option("Map2", "AltMap", HelpShowsDefault = false, IsInputFilePath = true,
+            HelpText = "Alternative column name map file (typically sent to DB_Schema_Export_Tool.exe via parameter ColumnMap when using the ExistingDDL option " +
+                       "to pre-process a DDL file prior to calling sqlserver2pgsql.pl); tab-delimited file with three columns:\n" +
+                       "SourceTableName  SourceColumnName  TargetColumnName")]
+        public string ColumnNameMapFile2 { get; set; }
 
         #endregion
 
@@ -28,6 +37,7 @@ namespace PgSqlViewCreatorHelper
         {
             InputScriptFile = string.Empty;
             ColumnNameMapFile = string.Empty;
+            ColumnNameMapFile2 = string.Empty;
         }
 
         /// <summary>
@@ -48,8 +58,13 @@ namespace PgSqlViewCreatorHelper
         {
             Console.WriteLine("Options:");
 
-            Console.WriteLine(" Input script file: {0}", InputScriptFile);
-            Console.WriteLine(" Column name map file: {0}", ColumnNameMapFile);
+            Console.WriteLine(" {0,-45}: {1}", "Input script file", InputScriptFile);
+            Console.WriteLine(" {0,-45}: {1}", "Column name map file", ColumnNameMapFile);
+
+            if (!string.IsNullOrWhiteSpace(ColumnNameMapFile2))
+            {
+                Console.WriteLine(" {0,-45}: {1}", "Secondary column name map file", ColumnNameMapFile2);
+            }
 
             Console.WriteLine();
 
