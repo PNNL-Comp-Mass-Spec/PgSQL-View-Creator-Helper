@@ -57,8 +57,8 @@ namespace PgSqlViewCreatorHelper
             ReplacementText = replacementText;
             DefaultSchema = defaultSchema;
 
-            // Configure the matcher to match whole words, and to be case sensitive
-            mWordMatcher = new Regex(@"\b" + textToFind + @"\b", RegexOptions.Compiled);
+            // Configure the matcher to match whole words, and to be case insensitive
+            mWordMatcher = new Regex(@"\b" + textToFind + @"\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
             if (string.IsNullOrWhiteSpace(defaultSchema))
             {
