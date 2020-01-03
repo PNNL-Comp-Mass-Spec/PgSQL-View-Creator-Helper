@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using PRISM;
 
 namespace PgSqlViewCreatorHelper
@@ -17,6 +18,15 @@ namespace PgSqlViewCreatorHelper
         public ViewCreatorHelper(ViewCreatorHelperOptions options)
         {
             mOptions = options;
+        }
+
+        private void AppendCreateView(Match match, TextWriter writer, ICollection<string> matchedViews)
+        {
+            var viewName = match.Groups["ViewName"].Value;
+            var newCreateViewLine = "CREATE OR REPLACE VIEW " + viewName;
+            OnDebugEvent(newCreateViewLine);
+            writer.WriteLine(newCreateViewLine);
+            matchedViews.Add(viewName);
         }
 
         public bool ProcessInputFile()
@@ -68,9 +78,15 @@ namespace PgSqlViewCreatorHelper
                         return false;
                 }
 
+                var matchedViews = new List<string>();
+
                 using (var reader = new StreamReader(new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (var writer = new StreamWriter(new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read)))
                 {
+                    writer.WriteLine("SET search_path TO \"$user\", public, mc;");
+                    writer.WriteLine("SHOW search_path;");
+                    writer.WriteLine();
+
                     while (!reader.EndOfStream)
                     {
                         var dataLine = reader.ReadLine();
@@ -81,12 +97,11 @@ namespace PgSqlViewCreatorHelper
                             continue;
                         }
 
-
-                        if (dataLine.Trim().IndexOf("Create View", StringComparison.OrdinalIgnoreCase) >= 0)
+                        if (dataLine.Trim().StartsWith("Create View", StringComparison.OrdinalIgnoreCase))
                         {
                             if (cachedLines.Count > 0)
                             {
-                                var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer);
+                                var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews);
                                 if (!success)
                                     return false;
 
@@ -102,11 +117,16 @@ namespace PgSqlViewCreatorHelper
 
                     if (cachedLines.Count > 0)
                     {
-                        var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer);
+                        var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews);
                         if (!success)
                             return false;
 
                         cachedLines.Clear();
+                    }
+
+                    foreach (var viewName in matchedViews)
+                    {
+                        writer.WriteLine("SELECT * FROM {0};", viewName);
                     }
                 }
 
@@ -125,7 +145,7 @@ namespace PgSqlViewCreatorHelper
         /// </summary>
         /// <param name="mapFile">Tab-delimited text file to read</param>
         /// <param name="tableNameMap">Dictionary mapping the original (source) table names to new table names in PostgreSQL</param>
-        /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a Dictionary of mappings of original column names to new column names in PostgreSQL</param>
+        /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a Dictionary of mappings of original column names to new column names in PostgreSQL; names should not have double quotes around them</param>
         /// <returns></returns>
         private bool LoadMapFile(
             FileSystemInfo mapFile,
@@ -185,7 +205,7 @@ namespace PgSqlViewCreatorHelper
                             OnWarningEvent(string.Format("Table {0} has multiple columns with new name {1}", newTableName, newColumnName));
                         }
 
-                        var columnNameReplacer = new WordReplacer(sourceColumnName, PossiblyUnquote(newColumnName));
+                        var columnNameReplacer = new WordReplacer(sourceColumnName, newColumnName);
                         targetTableColumnMap.Add(sourceColumnName, columnNameReplacer);
                     }
                 }
@@ -200,6 +220,13 @@ namespace PgSqlViewCreatorHelper
 
         }
 
+        /// <summary>
+        /// Load a secondary map file
+        /// </summary>
+        /// <param name="mapFile">Tab-delimited text file to read</param>
+        /// <param name="tableNameMap">Dictionary mapping the original (source) table names to new table names in PostgreSQL</param>
+        /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a Dictionary of mappings of original column names to new column names in PostgreSQL; names should not have double quotes around them</param>
+        /// <returns></returns>
         private bool LoadSecondaryMapFile(
             FileSystemInfo mapFile,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
@@ -250,7 +277,10 @@ namespace PgSqlViewCreatorHelper
                             continue;
                         }
 
-                        var newTableName = replacer.ReplacementText;
+                        if (!replacer.ReplacementText.Equals(PossiblyUnquote(replacer.ReplacementText)))
+                            Console.WriteLine("Check this code");
+
+                        var newTableName = PossiblyUnquote(replacer.ReplacementText);
 
                         if (!columnNameMap.TryGetValue(newTableName, out var targetTableColumnMap))
                         {
@@ -265,7 +295,7 @@ namespace PgSqlViewCreatorHelper
                             continue;
                         }
 
-                        var columnNameReplacer = new WordReplacer(sourceColumnName, PossiblyUnquote(newColumnName));
+                        var columnNameReplacer = new WordReplacer(sourceColumnName, newColumnName);
                         targetTableColumnMap.Add(sourceColumnName, columnNameReplacer);
                     }
                 }
@@ -302,12 +332,14 @@ namespace PgSqlViewCreatorHelper
         /// <param name="tableNameMap">Dictionary mapping the original (source) table names to new table names in PostgreSQL</param>
         /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a Dictionary of mappings of original column names to new column names in PostgreSQL</param>
         /// <param name="writer"></param>
+        /// <param name="matchedViews">List of matched view names</param>
         /// <returns></returns>
         private bool ProcessCachedLines(
             IEnumerable<string> cachedLines,
             Dictionary<string, WordReplacer> tableNameMap,
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
-            TextWriter writer)
+            TextWriter writer,
+            ICollection<string> matchedViews)
         {
             // Keys in this list are the original version of the line
             // Values are the updated version
@@ -315,9 +347,33 @@ namespace PgSqlViewCreatorHelper
 
             var referencedTables = new SortedSet<string>();
 
+            var createViewMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            var createViewAsMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+) +AS *$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+            var aliasMatcher = new Regex(@"\[(?<AliasName>[^]]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+            var stringConcatenationMatcher1 = new Regex(@"' *\+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            var stringConcatenationMatcher2 = new Regex(@"\+ *'", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+
             // Look for table names in cachedLines, updating as appropriate
             foreach (var dataLine in cachedLines)
             {
+                var match1 = createViewAsMatcher.Match(dataLine);
+                if (match1.Success)
+                {
+                    AppendCreateView(match1, writer, matchedViews);
+                    writer.WriteLine("AS");
+                    continue;
+                }
+
+                var match2 = createViewMatcher.Match(dataLine);
+                if (match2.Success)
+                {
+                    AppendCreateView(match2, writer, matchedViews);
+                    continue;
+                }
+
                 var workingCopy = string.Copy(dataLine);
 
                 foreach (var item in tableNameMap)
@@ -360,6 +416,27 @@ namespace PgSqlViewCreatorHelper
 
                         }
                     }
+                }
+
+                // Replace square bracket delimited names with double quote delimited names
+                // For example, change
+                // value as [The Value]
+                // to
+                // value as "The Value"
+                if (aliasMatcher.IsMatch(workingCopy))
+                {
+                    workingCopy = aliasMatcher.Replace(workingCopy, "\"${AliasName}\"");
+                }
+
+                // Use || for string concatenation, instead of +
+                if (stringConcatenationMatcher1.IsMatch(workingCopy))
+                {
+                    workingCopy = stringConcatenationMatcher1.Replace(workingCopy, "' ||");
+                }
+
+                if (stringConcatenationMatcher2.IsMatch(workingCopy))
+                {
+                    workingCopy = stringConcatenationMatcher2.Replace(workingCopy, "|| '");
                 }
 
                 if (originalLine.Equals(workingCopy))
