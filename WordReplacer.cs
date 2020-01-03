@@ -72,7 +72,7 @@ namespace PgSqlViewCreatorHelper
             }
             else
             {
-                mSchemaMatcher = new Regex(@"\b[^ ]+\." + replacementText, RegexOptions.Compiled);
+                mSchemaMatcher = new Regex(@"""?[^ ]+""?\.""?" + replacementText + @"""?", RegexOptions.Compiled);
             }
         }
 
