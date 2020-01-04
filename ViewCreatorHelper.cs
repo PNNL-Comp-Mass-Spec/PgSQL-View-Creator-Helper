@@ -23,7 +23,7 @@ namespace PgSqlViewCreatorHelper
         private void AppendCreateView(Match match, TextWriter writer, ICollection<string> matchedViews)
         {
             var viewName = match.Groups["ViewName"].Value;
-            var newCreateViewLine = "CREATE OR REPLACE VIEW " + viewName;
+            var newCreateViewLine = "CREATE OR REPLACE VIEW " + viewName.Trim();
             OnDebugEvent(newCreateViewLine);
             writer.WriteLine(newCreateViewLine);
             matchedViews.Add(viewName);
@@ -354,7 +354,6 @@ namespace PgSqlViewCreatorHelper
 
             var stringConcatenationMatcher1 = new Regex(@"' *\+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             var stringConcatenationMatcher2 = new Regex(@"\+ *'", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
 
             // Look for table names in cachedLines, updating as appropriate
             foreach (var dataLine in cachedLines)
