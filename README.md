@@ -6,7 +6,7 @@ mapping file (or files).
 
 ## Console Switches
 
-PgSqlViewCreatorHelper. is a console application, and must be run from the Windows command prompt.
+PgSqlViewCreatorHelper is a console application, and must be run from the Windows command prompt.
 
 ```
 PgSqlViewCreatorHelper.exe
