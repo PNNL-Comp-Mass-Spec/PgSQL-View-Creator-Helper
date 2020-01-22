@@ -22,7 +22,9 @@ PgSqlViewCreatorHelper.exe
 
 The input file should be a SQL text file with CREATE VIEW statements
 
-The `/Map` file is is a tab-delimited text file with five columns, for example:
+The `/Map` file is is a tab-delimited text file with five columns
+* The Map file matches the format of the NameMap file created by sqlserver2pgsql (https://github.com/PNNL-Comp-Mass-Spec/sqlserver2pgsql)
+* Example data:
 
 | SourceTable   | SourceName           | Schema | NewTable        | NewName                 |
 |---------------|----------------------|--------|-----------------|-------------------------|
@@ -39,9 +41,10 @@ The `/Map` file is is a tab-delimited text file with five columns, for example:
 | T_Mgrs        | control_from_website | mc     | "t_mgrs"        | "control_from_website"  |
 | T_Mgrs        | comment              | mc     | "t_mgrs"        | "comment"               |
 
-The Map file matches the format created by https://github.com/PNNL-Comp-Mass-Spec/sqlserver2pgsql
 
-Use `/Map2` to optionally specify a secondary map file, which is a tab-delimited text file with three columns, for example:
+Use `/Map2` to optionally specify a secondary map file, which is a tab-delimited text file with three columns
+* The Secondary Map file matches the file defined for the `ColumnMap` parameter when using the DB_Schema_Export_Tool (https://github.com/PNNL-Comp-Mass-Spec/DB-Schema-Export-Tool) to pre-process an existing DDL file
+* Example data:
 
 | SourceTableName         | SourceColumnName     | TargetColumnName     |
 |-------------------------|----------------------|----------------------|
@@ -57,7 +60,6 @@ Use `/Map2` to optionally specify a secondary map file, which is a tab-delimited
 | T_Mgrs                  | M_ControlFromWebsite | control_from_website |
 | T_Mgrs                  | M_Comment            | comment              |
 
-The Secondary Map file matches the file defined for parameter `ColumnMap` when using the DB_Schema_Export_Tool.exe (https://github.com/PNNL-Comp-Mass-Spec/DB-Schema-Export-Tool) to pre-process an existing DDL file
 
 Use `/Schema` to specify a default schema name to add before all table names (that don't already have a schema name prefix)
 
