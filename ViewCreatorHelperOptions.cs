@@ -63,21 +63,21 @@ namespace PgSqlViewCreatorHelper
         {
             Console.WriteLine("Options:");
 
-            Console.WriteLine(" {0,-45}: {1}", "Input script file", InputScriptFile);
-            Console.WriteLine(" {0,-45}: {1}", "Column name map file", ColumnNameMapFile);
+            Console.WriteLine(" {0,-35} {1}", "Input script file:", PathUtils.CompactPathString(InputScriptFile, 80));
+            Console.WriteLine(" {0,-35} {1}", "Column name map file:", PathUtils.CompactPathString(ColumnNameMapFile, 80));
 
             if (!string.IsNullOrWhiteSpace(ColumnNameMapFile2))
             {
-                Console.WriteLine(" {0,-45}: {1}", "Secondary column name map file", ColumnNameMapFile2);
+                Console.WriteLine(" {0,-35} {1}", "Secondary column name map file:", PathUtils.CompactPathString(ColumnNameMapFile2, 80));
             }
 
             if (string.IsNullOrWhiteSpace(DefaultSchema))
             {
-                Console.WriteLine(" {0,-45}: {1}", " Default schema name", "not defined");
+                Console.WriteLine(" {0,-35} {1}", "Default schema name:", "not defined");
             }
             else
             {
-                Console.WriteLine(" {0,-45}: {1}", " Default schema name", DefaultSchema);
+                Console.WriteLine(" {0,-35} {1}", "Default schema name:", DefaultSchema);
             }
 
             Console.WriteLine();
