@@ -29,6 +29,86 @@ namespace PgSqlViewCreatorHelper
             matchedViews.Add(viewName);
         }
 
+
+        /// <summary>
+        /// Create a merged column name map file
+        /// </summary>
+        /// <param name="inputDirectory"></param>
+        /// <param name="mapFile">Source Column name map file</param>
+        /// <param name="tableNameMap">
+        /// Dictionary where keys are the original (source) table names
+        /// and values are WordReplacer classes that track the new table names and new column names in PostgreSQL
+        /// </param>
+        /// <param name="columnNameMap">
+        /// Dictionary where keys are new table names
+        /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
+        /// names should not have double quotes around them
+        /// </param>
+        private void CreateMergedColumnNameMapFile(
+            FileSystemInfo inputDirectory,
+            FileSystemInfo mapFile,
+            IReadOnlyDictionary<string, WordReplacer> tableNameMap,
+            IReadOnlyDictionary<string, Dictionary<string, WordReplacer>> columnNameMap)
+        {
+            try
+            {
+                if (inputDirectory == null)
+                {
+                    return;
+                }
+
+                var mergedFileName = Path.GetFileNameWithoutExtension(mapFile.Name) + "_merged" + mapFile.Extension;
+                var outputFilePath = Path.Combine(inputDirectory.FullName, mergedFileName);
+
+                OnStatusEvent("Creating " + outputFilePath);
+
+                using (var writer = new StreamWriter(new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                {
+                    var headerColumns = new List<string> {
+                        "SourceTable", "SourceName", "Schema", "NewTable", "NewName"
+                    };
+                    writer.WriteLine(string.Join("\t", headerColumns));
+
+                    var dataValues = new List<string>();
+
+                    foreach (var sourceTableName in from item in tableNameMap.Keys orderby item select item)
+                    {
+                        var tableInfo = tableNameMap[sourceTableName];
+
+                        var newTableName = tableInfo.ReplacementText;
+                        var newSchema = tableInfo.DefaultSchema;
+
+                        if (!columnNameMap.TryGetValue(newTableName, out var targetTableColumnMap))
+                        {
+                            continue;
+                        }
+
+                        foreach (var columnItem in targetTableColumnMap)
+                        {
+                            var sourceColumnName = columnItem.Key;
+                            var newColumnName = columnItem.Value.ReplacementText;
+
+                            dataValues.Clear();
+                            dataValues.Add(sourceTableName);
+                            dataValues.Add(sourceColumnName);
+                            dataValues.Add(newSchema);
+                            dataValues.Add(newTableName);
+                            dataValues.Add(newColumnName);
+
+                            writer.WriteLine(string.Join("\t", dataValues));
+                        }
+
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                OnErrorEvent("Error in CreateMergedColumnNameMapFile", ex);
+            }
+
+        }
+
         public bool ProcessInputFile()
         {
             var cachedLines = new List<string>();
@@ -42,7 +122,7 @@ namespace PgSqlViewCreatorHelper
                     return false;
                 }
 
-                if (inputFile.DirectoryName == null)
+                if (inputFile.Directory == null || inputFile.DirectoryName == null)
                 {
                     OnErrorEvent("Unable to determine the parent directory of the input file: " + inputFile.FullName);
                     return false;
@@ -130,6 +210,8 @@ namespace PgSqlViewCreatorHelper
                     }
                 }
 
+                CreateMergedColumnNameMapFile(inputFile.Directory, mapFile, tableNameMap, columnNameMap);
+
                 return true;
             }
             catch (Exception ex)
@@ -184,13 +266,19 @@ namespace PgSqlViewCreatorHelper
 
                         var sourceTableName = lineParts[0];
                         var sourceColumnName = lineParts[1];
-                        // var schema = lineParts[2];
+                        var newSchema = lineParts[2];
                         var newTableName = PossiblyUnquote(lineParts[3]);
                         var newColumnName = PossiblyUnquote(lineParts[4]);
 
                         if (!tableNameMap.ContainsKey(sourceTableName))
                         {
-                            var replacer = new WordReplacer(sourceTableName, newTableName, mOptions.DefaultSchema);
+                            string newSchemaToUse;
+                            if (string.IsNullOrEmpty(newSchema))
+                                newSchemaToUse = mOptions.DefaultSchema;
+                            else
+                                newSchemaToUse = newSchema;
+
+                            var replacer = new WordReplacer(sourceTableName, newTableName, newSchemaToUse);
                             tableNameMap.Add(sourceTableName, replacer);
                         }
 
@@ -224,8 +312,15 @@ namespace PgSqlViewCreatorHelper
         /// Load a secondary map file
         /// </summary>
         /// <param name="mapFile">Tab-delimited text file to read</param>
-        /// <param name="tableNameMap">Dictionary mapping the original (source) table names to new table names in PostgreSQL</param>
-        /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a Dictionary of mappings of original column names to new column names in PostgreSQL; names should not have double quotes around them</param>
+        /// <param name="tableNameMap">
+        /// Dictionary where keys are the original (source) table names
+        /// and values are WordReplacer classes that track the new table names and new column names in PostgreSQL
+        /// </param>
+        /// <param name="columnNameMap">
+        /// Dictionary where keys are new table names
+        /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
+        /// names should not have double quotes around them
+        /// </param>
         /// <returns></returns>
         private bool LoadSecondaryMapFile(
             FileSystemInfo mapFile,
@@ -276,9 +371,6 @@ namespace PgSqlViewCreatorHelper
                             missingTablesWarned.Add(sourceTableName);
                             continue;
                         }
-
-                        if (!replacer.ReplacementText.Equals(PossiblyUnquote(replacer.ReplacementText)))
-                            Console.WriteLine("Check this code");
 
                         var newTableName = PossiblyUnquote(replacer.ReplacementText);
 
