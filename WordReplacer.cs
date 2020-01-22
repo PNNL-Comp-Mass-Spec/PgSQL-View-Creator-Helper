@@ -2,7 +2,7 @@
 
 namespace PgSqlViewCreatorHelper
 {
-    internal class WordReplacer
+    public class WordReplacer
     {
         /// <summary>
         /// Text to find
