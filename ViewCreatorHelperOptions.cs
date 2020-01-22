@@ -9,7 +9,7 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        public const string PROGRAM_DATE = "January 21, 2020";
+        public const string PROGRAM_DATE = "January 21 2020";
 
         #region "Properties"
 
@@ -23,12 +23,12 @@ namespace PgSqlViewCreatorHelper
         public string ColumnNameMapFile { get; set; }
 
         [Option("Map2", "AltMap", HelpShowsDefault = false, IsInputFilePath = true,
-            HelpText = "Alternative column name map file (typically sent to DB_Schema_Export_Tool.exe via parameter ColumnMap when using the ExistingDDL option " +
+            HelpText = "Alternative column name map file (typically sent to DB_Schema_Export_Tool.exe via the ColumnMap parameter when using the ExistingDDL option " +
                        "to pre-process a DDL file prior to calling sqlserver2pgsql.pl); tab-delimited file with three columns:\n" +
                        "SourceTableName  SourceColumnName  TargetColumnName")]
         public string ColumnNameMapFile2 { get; set; }
 
-        [Option("Schema", "DefaultSchema", HelpShowsDefault = false,
+        [Option("DefaultSchema", "Schema", HelpShowsDefault = false,
             HelpText = "Schema to prefix table names with (when the name does not have a schema)")]
         public string DefaultSchema { get; set; }
 

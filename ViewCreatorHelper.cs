@@ -361,13 +361,16 @@ namespace PgSqlViewCreatorHelper
                         var sourceColumnName = lineParts[1];
                         var newColumnName = PossiblyUnquote(lineParts[2]);
 
-                        // Look for the updated table name, as tracked by sourceTableName
+                        // Look for the table in tableNameMap
                         if (!tableNameMap.TryGetValue(sourceTableName, out var replacer))
                         {
                             if (missingTablesWarned.Contains(sourceTableName))
                                 continue;
 
-                            OnWarningEvent(string.Format("Table {0} not found in tableNameMap", sourceTableName));
+                            OnWarningEvent(string.Format(
+                                "Table {0} not found in tableNameMap; ignoring column map info for column {1}",
+                                sourceTableName, sourceColumnName));
+
                             missingTablesWarned.Add(sourceTableName);
                             continue;
                         }
