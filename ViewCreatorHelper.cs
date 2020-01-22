@@ -415,7 +415,6 @@ namespace PgSqlViewCreatorHelper
             return objectName.Trim('"');
         }
 
-
         /// <summary>
         /// Looks for table names in cachedLines, then uses that information to update column names
         /// Writes the updated text to disk
