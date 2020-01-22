@@ -23,8 +23,6 @@ T_Mgrs	mgr_type_id	mc	t_mgrs	mgr_type_id
 T_Mgrs	param_value_changed	mc	t_mgrs	param_value_changed
 T_Mgrs	control_from_website	mc	t_mgrs	control_from_website
 T_Mgrs	comment	mc	t_mgrs	comment
-T_Mgrs	M_ID	mc	t_mgrs	m_id
-T_Mgrs	M_Name	mc	t_mgrs	m_name
 T_Mgrs	M_TypeID	mc	t_mgrs	mgr_type_id
 T_Mgrs	M_ParmValueChanged	mc	t_mgrs	param_value_changed
 T_Mgrs	M_ControlFromWebsite	mc	t_mgrs	control_from_website
