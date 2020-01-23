@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using PRISM;
 
-namespace PgSqlViewCreatorHelper
+namespace TableColumnNameMapContainer
 {
     public class NameMapReader : EventNotifier
     {
