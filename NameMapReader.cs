@@ -88,6 +88,13 @@ namespace PgSqlViewCreatorHelper
                             columnNameMap.Add(newTableName, targetTableColumnMap);
                         }
 
+                        if (targetTableColumnMap.ContainsKey(sourceColumnName))
+                        {
+                            OnWarningEvent(string.Format(
+                                "In file {0}, table {1} has multiple columns with the same source name, {2}",
+                                mapFile.Name, newTableName, sourceColumnName));
+                            continue;
+                        }
 
                         if (targetTableColumnMap.Values.Any(item => item.ReplacementText.Equals(newColumnName)))
                         {
