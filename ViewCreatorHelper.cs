@@ -235,14 +235,21 @@ namespace PgSqlViewCreatorHelper
         /// Writes the updated text to disk
         /// </summary>
         /// <param name="cachedLines"></param>
-        /// <param name="tableNameMap">Dictionary mapping the original (source) table names to new table names in PostgreSQL</param>
-        /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a Dictionary of mappings of original column names to new column names in PostgreSQL</param>
+        /// <param name="tableNameMap">
+        /// Dictionary where keys are the original (source) table names
+        /// and values are WordReplacer classes that track the new table names and new column names in PostgreSQL
+        /// </param>
+        /// <param name="columnNameMap">
+        /// Dictionary where keys are new table names
+        /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
+        /// names should not have double quotes around them
+        /// </param>
         /// <param name="writer"></param>
         /// <param name="matchedViews">List of matched view names</param>
         /// <returns></returns>
         private bool ProcessCachedLines(
             IEnumerable<string> cachedLines,
-            Dictionary<string, WordReplacer> tableNameMap,
+            IReadOnlyDictionary<string, WordReplacer> tableNameMap,
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             TextWriter writer,
             ICollection<string> matchedViews)
