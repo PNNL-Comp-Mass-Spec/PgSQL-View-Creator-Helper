@@ -45,13 +45,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NameMapReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="NameUpdater.cs" />
     <Compile Include="ViewCreatorHelper.cs" />
     <Compile Include="ViewCreatorHelperOptions.cs" />
-    <Compile Include="WordReplacer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -60,6 +57,12 @@
     <PackageReference Include="PRISM-Library">
       <Version>2.5.33</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="NameMapContainer\TableColumnNameMapContainer.csproj">
+      <Project>{c58f0476-376a-4665-8c09-e1634cec8bb5}</Project>
+      <Name>TableColumnNameMapContainer</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
