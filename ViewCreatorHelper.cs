@@ -277,7 +277,7 @@ namespace PgSqlViewCreatorHelper
                     continue;
                 }
 
-                var updatedLine = NameUpdater.FindAndUpdateTableNames(tableNameMap, referencedTables, dataLine);
+                var updatedLine = NameUpdater.FindAndUpdateTableNames(tableNameMap, referencedTables, dataLine, true);
 
                 updatedLines.Add(new KeyValuePair<string, string>(dataLine, updatedLine));
             }
@@ -287,8 +287,8 @@ namespace PgSqlViewCreatorHelper
             {
                 var originalLine = dataLine.Key;
 
-                var workingCopy = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, dataLine.Value);
-                
+                var workingCopy = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, dataLine.Value, true);
+
                 // Use || for string concatenation, instead of +
                 if (stringConcatenationMatcher1.IsMatch(workingCopy))
                 {

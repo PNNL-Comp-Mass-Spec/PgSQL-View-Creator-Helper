@@ -36,8 +36,8 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Regex matcher to determine if ReplacementText is preceded by a schema
         /// </summary>
+        /// <remarks>This will be null if the class was instantiated with an empty schema name</remarks>
         private readonly Regex mSchemaMatcher;
-
 
         /// <summary>
         /// Regex matcher to find TextToFind
@@ -81,9 +81,10 @@ namespace PgSqlViewCreatorHelper
         /// If found, replace with ReplacementText
         /// </summary>
         /// <param name="dataLine">Text to search</param>
+        /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         /// <param name="updatedLine">Updated line if TextToFind was found; otherwise, an empty string</param>
         /// <returns>True if the line was updated, otherwise false</returns>
-        public bool ProcessLine(string dataLine, out string updatedLine)
+        public bool ProcessLine(string dataLine, bool updateSchema, out string updatedLine)
         {
             if (!mWordMatcher.IsMatch(dataLine))
             {
@@ -93,7 +94,7 @@ namespace PgSqlViewCreatorHelper
 
             updatedLine = mWordMatcher.Replace(dataLine, ReplacementText);
 
-            if (mSchemaMatcher == null)
+            if (mSchemaMatcher == null || !updateSchema)
                 return true;
 
             if (mSchemaMatcher.Match(updatedLine).Success)
