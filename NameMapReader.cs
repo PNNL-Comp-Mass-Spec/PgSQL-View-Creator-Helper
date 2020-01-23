@@ -16,12 +16,21 @@ namespace PgSqlViewCreatorHelper
         /// </summary>
         /// <param name="mapFile">Tab-delimited text file to read</param>
         /// <param name="defaultSchema">Default schema name</param>
-        /// <param name="tableNameMap">Dictionary mapping the original (source) table names to new table names in PostgreSQL</param>
-        /// <param name="columnNameMap">Dictionary where keys are new table names, and values are a dictionary of mappings of original column names to new column names in PostgreSQL; names should not have double quotes around them</param>
+        /// <param name="warnDuplicateTargetColumnNames">If true, warn the user at the console if multiple columns in a table have the same target column name</param>
+        /// <param name="tableNameMap">
+        /// Dictionary where keys are the original (source) table names
+        /// and values are WordReplacer classes that track the new table names and new column names in PostgreSQL
+        /// </param>
+        /// <param name="columnNameMap">
+        /// Dictionary where keys are new table names
+        /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
+        /// names should not have double quotes around them
+        /// </param>
         /// <returns></returns>
         public bool LoadSqlServerToPgSqlColumnMapFile(
             FileSystemInfo mapFile,
             string defaultSchema,
+            bool warnDuplicateTargetColumnNames,
             out Dictionary<string, WordReplacer> tableNameMap,
             out Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap)
         {
@@ -79,9 +88,15 @@ namespace PgSqlViewCreatorHelper
                             columnNameMap.Add(newTableName, targetTableColumnMap);
                         }
 
+
                         if (targetTableColumnMap.Values.Any(item => item.ReplacementText.Equals(newColumnName)))
                         {
-                            OnWarningEvent(string.Format("Table {0} has multiple columns with new name {1}", newTableName, newColumnName));
+                            if (warnDuplicateTargetColumnNames)
+                            {
+                                OnWarningEvent(string.Format(
+                                    "In file {0}, table {1} has multiple columns with the same new name, {2}",
+                                    mapFile.Name, newTableName, newColumnName));
+                            }
                         }
 
                         var columnNameReplacer = new WordReplacer(sourceColumnName, newColumnName);

@@ -144,6 +144,7 @@ namespace PgSqlViewCreatorHelper
                 var mapFileLoaded = mapReader.LoadSqlServerToPgSqlColumnMapFile(
                     mapFile,
                     mOptions.DefaultSchema,
+                    true,
                     out var tableNameMap,
                     out var columnNameMap);
 
