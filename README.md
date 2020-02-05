@@ -34,8 +34,8 @@ The `/Map` file is is a tab-delimited text file with five columns
 | T_Log_Entries | type                 | mc     | "t_log_entries" | "type"                  |
 | T_Log_Entries | message              | mc     | "t_log_entries" | "message"               |
 | T_Log_Entries | Entered_By           | mc     | "t_log_entries" | "entered_by"            |
-| T_Mgrs        | m_id                 | mc     | "t_mgrs"        | "m_id"                  |
-| T_Mgrs        | m_name               | mc     | "t_mgrs"        | "m_name"                |
+| T_Mgrs        | m_id                 | mc     | "t_mgrs"        | "mgr_id"                  |
+| T_Mgrs        | m_name               | mc     | "t_mgrs"        | "mgr_name"                |
 | T_Mgrs        | mgr_type_id          | mc     | "t_mgrs"        | "mgr_type_id"           |
 | T_Mgrs        | param_value_changed  | mc     | "t_mgrs"        | "param_value_changed"   |
 | T_Mgrs        | control_from_website | mc     | "t_mgrs"        | "control_from_website"  |
@@ -53,8 +53,8 @@ Use `/Map2` to optionally specify a secondary map file, which is a tab-delimited
 | T_MgrTypes              | mt_active            | mgr_type_active      |
 | T_MgrType_ParamType_Map | MgrTypeID            | mgr_type_id          |
 | T_MgrType_ParamType_Map | ParamTypeID          | param_type_id        |
-| T_Mgrs                  | M_ID                 | m_id                 |
-| T_Mgrs                  | M_Name               | m_name               |
+| T_Mgrs                  | M_ID                 | mgr_id               |
+| T_Mgrs                  | M_Name               | mgr_name             |
 | T_Mgrs                  | M_TypeID             | mgr_type_id          |
 | T_Mgrs                  | M_ParmValueChanged   | param_value_changed  |
 | T_Mgrs                  | M_ControlFromWebsite | control_from_website |

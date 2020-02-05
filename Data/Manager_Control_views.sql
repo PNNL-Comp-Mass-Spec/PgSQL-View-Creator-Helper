@@ -319,18 +319,6 @@ SELECT MT.MT_TypeName AS MgrType,
        ON MTPM.MgrTypeID = MT.MT_TypeID
 ;
 
-CREATE VIEW "mc"."v_mgr_type_list_by_param" 
-AS
-SELECT DISTINCT PT.ParamName,
-                mc.GetMgrTypeListByParamName(PT.ParamName) AS MgrTypeList
-	FROM T_MgrType_ParamType_Map MP
-     INNER JOIN T_MgrTypes MT
-       ON MP.MgrTypeID = MT.MT_TypeID
-     INNER JOIN T_ParamType PT
-       ON MP.ParamTypeID = PT.ParamID
-
-;
-
 CREATE VIEW "mc"."v_mgr_types_by_param" 
 AS
 SELECT DISTINCT PT.ParamName,

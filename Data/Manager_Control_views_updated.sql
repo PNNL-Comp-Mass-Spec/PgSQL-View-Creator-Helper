@@ -15,7 +15,7 @@ ALTER TABLE "mc"."t_usage_log" ALTER COLUMN "posting_time" SET DEFAULT CURRENT_T
 ALTER TABLE "mc"."t_usage_stats" ALTER COLUMN "last_posting_time" SET DEFAULT CURRENT_TIMESTAMP;
 CREATE OR REPLACE VIEW "mc"."v_param_value"
 AS
-SELECT M.m_name,
+SELECT M.mgr_name,
        PT.param_name,
        PV.entry_id,
        PV.type_id,
@@ -27,7 +27,7 @@ SELECT M.m_name,
        M.mgr_type_id
 	FROM mc.t_param_value PV
      INNER JOIN mc.t_mgrs M
-       ON PV.mgr_id = M.m_id
+       ON PV.mgr_id = M.mgr_id
      INNER JOIN mc.t_param_type PT
        ON PV.type_id = PT.param_id
 
@@ -51,8 +51,8 @@ WHERE (ParamName = 'workdir')
 
 CREATE OR REPLACE VIEW "mc"."v_manager_list_by_type"
 AS
-SELECT M.m_id AS ID,
-       M.m_name AS "Manager Name",
+SELECT M.mgr_id AS ID,
+       M.mgr_name AS "Manager Name",
        MT.mgr_type_name AS "Manager Type",
        COALESCE(ActiveQ.Active, 'not defined') AS Active,
        M.mgr_type_id,
@@ -71,7 +71,7 @@ FROM mc.t_mgrs AS M
                             INNER JOIN mc.t_param_type AS PT
                               ON PV.type_id = PT.param_id
                        WHERE (PT.param_name = 'mgractive') ) AS ActiveQ
-       ON M.m_id = ActiveQ.mgr_id
+       ON M.mgr_id = ActiveQ.mgr_id
 WHERE (M.control_from_website > 0)
 
 ;
@@ -157,8 +157,8 @@ FROM ( SELECT DISTINCT param_id,
 
 CREATE OR REPLACE VIEW "mc"."v_analysis_job_processors_list_report"
 AS
-SELECT M.m_id AS ID,
-       M.m_name AS Name,
+SELECT M.mgr_id AS ID,
+       M.mgr_name AS Name,
        MT.mgr_type_name AS "Type"
 	FROM mc.t_mgrs M
      INNER JOIN mc.t_mgr_types MT
@@ -168,7 +168,7 @@ SELECT M.m_id AS ID,
 CREATE OR REPLACE VIEW "mc"."v_analysis_mgr_params_active_and_debug_level"
 AS
 SELECT PV.mgr_id,
-       M.m_name as Manager,
+       M.mgr_name as Manager,
        PT.param_name,
        PV.type_id AS ParamTypeID,
        PV.value,
@@ -178,7 +178,7 @@ SELECT PV.mgr_id,
      INNER JOIN mc.t_param_type AS PT
        ON PV.type_id = PT.param_id
      INNER JOIN mc.t_mgrs AS M
-       ON PV.mgr_id = M.m_id
+       ON PV.mgr_id = M.mgr_id
 WHERE PT.param_name IN ('mgractive', 'debuglevel', 'ManagerErrorCleanupMode') AND
       M.mgr_type_id IN (11, 15)
 
@@ -187,7 +187,7 @@ WHERE PT.param_name IN ('mgractive', 'debuglevel', 'ManagerErrorCleanupMode') AN
 CREATE OR REPLACE VIEW "mc"."v_analysis_mgr_params_update_required"
 AS
 SELECT PV.mgr_id,
-       M.m_name as Manager,
+       M.mgr_name as Manager,
        PT.param_name,
        PV.type_id AS ParamTypeID,
        PV.value,
@@ -197,7 +197,7 @@ SELECT PV.mgr_id,
      INNER JOIN mc.t_param_type AS PT
        ON PV.type_id = PT.param_id
      INNER JOIN mc.t_mgrs AS M
-       ON PV.mgr_id = M.m_id
+       ON PV.mgr_id = M.mgr_id
 WHERE PT.param_name IN ('ManagerUpdateRequired') AND
       M.mgr_type_id IN (11, 15)
 
@@ -206,16 +206,16 @@ WHERE PT.param_name IN ('ManagerUpdateRequired') AND
 
 CREATE OR REPLACE VIEW "mc"."v_manager_entry"
 AS
-SELECT m_id AS ManagerID,
-       m_name AS ManagerName,
+SELECT mgr_id AS ManagerID,
+       mgr_name AS ManagerName,
        control_from_website AS ControlFromWebsite
 	FROM mc.t_mgrs
 ;
 
 CREATE OR REPLACE VIEW "mc"."v_manager_list_by_type_picklist"
 AS
-SELECT M.m_id AS ID,
-       M.m_name AS ManagerName,
+SELECT M.mgr_id AS ID,
+       M.mgr_name AS ManagerName,
        MT.mgr_type_name AS ManagerType
 	FROM mc.t_mgrs AS M
      JOIN mc.t_mgr_types AS MT
@@ -236,18 +236,18 @@ SELECT DISTINCT MT.mgr_type_name AS "Manager Type",
      JOIN mc.t_mgrs M
        ON M.mgr_type_id = MT.mgr_type_id
      JOIN mc.t_param_value PV
-       ON PV.mgr_id = M.m_id AND
+       ON PV.mgr_id = M.mgr_id AND
           M.mgr_type_id = MT.mgr_type_id
 ;
 
 CREATE OR REPLACE VIEW "mc"."v_manager_update_required"
 AS
-SELECT M.m_name,
+SELECT M.mgr_name,
        PT.param_name,
        PV.value
 	FROM mc.t_mgrs As M
      INNER JOIN mc.t_param_value PV
-       ON M.m_id = PV.mgr_id
+       ON M.mgr_id = PV.mgr_id
      INNER JOIN mc.t_param_type PT
        ON PV.type_id = PT.param_id
 WHERE PT.param_name = 'ManagerUpdateRequired'
@@ -256,7 +256,7 @@ WHERE PT.param_name = 'ManagerUpdateRequired'
 
 CREATE OR REPLACE VIEW "mc"."v_managers_by_broadcast_queue_topic"
 AS
-SELECT M.m_name AS MgrName,
+SELECT M.mgr_name AS MgrName,
        MT.mgr_type_name AS MgrType,
        TB.BroadcastQueueTopic AS BroadcastTopic,
        TM.MessageQueueURI AS MsgQueueURI
@@ -265,7 +265,7 @@ FROM mc.t_mgrs M
                          value AS BroadcastQueueTopic
                   FROM mc.t_param_value PV
                   WHERE type_id = 117 ) AS TB
-       ON M.m_id = TB.mgr_id
+       ON M.mgr_id = TB.mgr_id
      INNER JOIN mc.t_mgr_types MT
        ON M.mgr_type_id = MT.mgr_type_id
      INNER JOIN ( SELECT mgr_id,
@@ -273,7 +273,7 @@ FROM mc.t_mgrs M
 
 	FROM mc.t_param_value AS PV
                   WHERE type_id = 105 ) AS TM
-       ON M.m_id = TM.mgr_id
+       ON M.mgr_id = TM.mgr_id
 ;
 
 CREATE OR REPLACE VIEW "mc"."v_mgr_param_defaults"
@@ -294,7 +294,7 @@ SELECT MTPM.mgr_type_id,
 CREATE OR REPLACE VIEW "mc"."v_mgr_params"
 AS
 SELECT PV.mgr_id AS ManagerID,
-       M.m_name AS ManagerName,
+       M.mgr_name AS ManagerName,
        MT.mgr_type_name AS ManagerType,
        PT.param_name AS ParameterName,
        PV.value AS ParameterValue,
@@ -306,7 +306,7 @@ SELECT PV.mgr_id AS ManagerID,
      INNER JOIN mc.t_mgr_types MT
        ON M.mgr_type_id = MT.mgr_type_id
      INNER JOIN mc.t_param_value PV
-       ON M.m_id = PV.mgr_id
+       ON M.mgr_id = PV.mgr_id
      INNER JOIN mc.t_param_type PT
        ON PV.type_id = PT.param_id
 
@@ -323,18 +323,6 @@ SELECT MT.mgr_type_name AS MgrType,
        ON MTPM.mgr_type_id = MT.mgr_type_id
 ;
 
-CREATE OR REPLACE VIEW "mc"."v_mgr_type_list_by_param"
-AS
-SELECT DISTINCT PT.param_name,
-                mc.GetMgrTypeListByParamName(PT.param_name) AS MgrTypeList
-	FROM mc.t_mgr_type_param_type_map MP
-     INNER JOIN mc.t_mgr_types MT
-       ON MP.mgr_type_id = MT.mgr_type_id
-     INNER JOIN mc.t_param_type PT
-       ON MP.param_type_id = PT.param_id
-
-;
-
 CREATE OR REPLACE VIEW "mc"."v_mgr_types_by_param"
 AS
 SELECT DISTINCT PT.param_name,
@@ -349,7 +337,7 @@ SELECT DISTINCT PT.param_name,
 
 CREATE OR REPLACE VIEW "mc"."v_old_param_value"
 AS
-SELECT M.m_name,
+SELECT M.mgr_name,
        PT.param_name,
        PV.entry_id,
        PV.type_id,
@@ -362,7 +350,7 @@ SELECT M.m_name,
 	   PT.param_name as ParamType
 	FROM mc.t_param_value_old_managers PV
      INNER JOIN mc.t_old_managers M
-       ON PV.mgr_id = M.m_id
+       ON PV.mgr_id = M.mgr_id
      INNER JOIN mc.t_param_type PT
        ON PV.type_id = PT.param_id
 
@@ -409,7 +397,6 @@ SELECT * FROM "mc"."v_managers_by_broadcast_queue_topic" ;
 SELECT * FROM "mc"."v_mgr_param_defaults" ;
 SELECT * FROM "mc"."v_mgr_params" ;
 SELECT * FROM "mc"."v_mgr_params_by_mgr_type" ;
-SELECT * FROM "mc"."v_mgr_type_list_by_param" ;
 SELECT * FROM "mc"."v_mgr_types_by_param" ;
 SELECT * FROM "mc"."v_old_param_value" ;
 SELECT * FROM "mc"."v_param_name_picklist" ;
