@@ -6,11 +6,11 @@ using PRISM;
 
 namespace PgSqlViewCreatorHelper
 {
-    class Program
+    internal class Program
     {
         private static DateTime mLastProgressTime;
 
-        static int Main(string[] args)
+        private static int Main(string[] args)
         {
             mLastProgressTime = DateTime.UtcNow;
 
