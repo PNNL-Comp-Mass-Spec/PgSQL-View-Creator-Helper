@@ -8,8 +8,7 @@ namespace TableColumnNameMapContainer
         /// <summary>
         /// This is used to find names surrounded by square brackets
         /// </summary>
-        private static readonly Regex mAliasMatcher = new Regex(
-            @"\[(?<AliasName>[^]]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex mAliasMatcher = new(@"\[(?<AliasName>[^]]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// Look for known table names in the data line
