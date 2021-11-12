@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace TableColumnNameMapContainer
 {
-    public class NameUpdater
+    public static class NameUpdater
     {
         /// <summary>
         /// This is used to find names surrounded by square brackets
