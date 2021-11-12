@@ -4,6 +4,8 @@ namespace TableColumnNameMapContainer
 {
     public class WordReplacer
     {
+        // Ignore Spelling: mc, Regex
+
         /// <summary>
         /// Text to find
         /// </summary>
@@ -18,18 +20,22 @@ namespace TableColumnNameMapContainer
         /// Schema name to place before the word (if no schema exists)
         /// </summary>
         /// <remarks>
+        /// <para>
         /// For example, given
         ///   TextToFind=T_MgrType_ParamType_Map
         ///   ReplacementText="t_mgr_type_param_type_map"
         ///   DefaultSchema=mc
-        ///
+        /// </para>
+        /// <para>
         /// If the line being analyzed has: LEFT JOIN T_MgrType_ParamType_Map
         /// it will be changed to:          LEFT JOIN mc."t_mgr_type_param_type_map"
         /// with the mc. added by this class
-        ///
+        /// </para>
+        /// <para>
         /// However, if the line has:       mc.T_MgrType_ParamType_Map
         /// It will be changed to:          mc."t_mgr_type_param_type_map"
         /// where the mc. portion is recognized to already be defined
+        /// </para>
         /// </remarks>
         public string DefaultSchema { get; }
 

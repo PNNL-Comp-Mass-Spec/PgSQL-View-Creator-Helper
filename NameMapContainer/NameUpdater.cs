@@ -49,7 +49,7 @@ namespace TableColumnNameMapContainer
         }
 
         /// <summary>
-        ///
+        ///Update column names in dictionary columnNameMap
         /// </summary>
         /// <param name="columnNameMap">
         /// Dictionary where keys are new table names
