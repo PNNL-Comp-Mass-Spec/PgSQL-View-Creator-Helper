@@ -22,26 +22,32 @@ namespace PgSqlViewCreatorHelper
                               "renames the column and table names referenced by the views to use " +
                               "new names defined in the mapping files.",
 
-                ContactInfo = "Program written by Matthew Monroe for the Department of Energy" + Environment.NewLine +
-                              "(PNNL, Richland, WA) in 2019" +
+                ContactInfo = "Program written by Matthew Monroe for the Department of Energy (PNNL, Richland, WA)" +
                               Environment.NewLine + Environment.NewLine +
                               "E-mail: matthew.monroe@pnnl.gov or proteomics@pnnl.gov" + Environment.NewLine +
                               "Website: https://github.com/PNNL-Comp-Mass-Spec/ or https://panomics.pnnl.gov/ or https://www.pnnl.gov/integrative-omics",
 
-                UsageExamples = {
-                        exeName + @" DBName_unsure.sql /M:DBName_ColumnNameMap.txt"
-                    }
+                UsageExamples =
+                {
+                    exeName + " DBName_unsure.sql /M:DBName_ColumnNameMap.txt"
+                }
             };
 
             parser.AddParamFileKey("Conf");
 
-            var parseResults = parser.ParseArgs(args);
-            var options = parseResults.ParsedResults;
+            var result = parser.ParseArgs(args);
+            var options = result.ParsedResults;
 
             try
             {
-                if (!parseResults.Success)
+                if (!result.Success)
                 {
+                    if (parser.CreateParamFileProvided)
+                    {
+                        return 0;
+                    }
+
+                    // Delay for 1500 msec in case the user double clicked this file from within Windows Explorer (or started the program via a shortcut)
                     Thread.Sleep(1500);
                     return -1;
                 }
