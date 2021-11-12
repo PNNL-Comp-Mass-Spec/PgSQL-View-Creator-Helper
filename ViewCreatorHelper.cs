@@ -62,42 +62,42 @@ namespace PgSqlViewCreatorHelper
 
                 OnStatusEvent("Creating " + outputFilePath);
 
-                using (var writer = new StreamWriter(new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                using var writer = new StreamWriter(new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read));
+
+                var headerColumns = new List<string>
                 {
-                    var headerColumns = new List<string> {
-                        "SourceTable", "SourceName", "Schema", "NewTable", "NewName"
-                    };
-                    writer.WriteLine(string.Join("\t", headerColumns));
+                    "SourceTable", "SourceName", "Schema", "NewTable", "NewName"
+                };
 
-                    var dataValues = new List<string>();
+                writer.WriteLine(string.Join("\t", headerColumns));
 
-                    foreach (var sourceTableName in from item in tableNameMap.Keys orderby item select item)
+                var dataValues = new List<string>();
+
+                foreach (var sourceTableName in from item in tableNameMap.Keys orderby item select item)
+                {
+                    var tableInfo = tableNameMap[sourceTableName];
+
+                    var newTableName = tableInfo.ReplacementText;
+                    var newSchema = tableInfo.DefaultSchema;
+
+                    if (!columnNameMap.TryGetValue(newTableName, out var targetTableColumnMap))
                     {
-                        var tableInfo = tableNameMap[sourceTableName];
+                        continue;
+                    }
 
-                        var newTableName = tableInfo.ReplacementText;
-                        var newSchema = tableInfo.DefaultSchema;
+                    foreach (var columnItem in targetTableColumnMap)
+                    {
+                        var sourceColumnName = columnItem.Key;
+                        var newColumnName = columnItem.Value.ReplacementText;
 
-                        if (!columnNameMap.TryGetValue(newTableName, out var targetTableColumnMap))
-                        {
-                            continue;
-                        }
+                        dataValues.Clear();
+                        dataValues.Add(sourceTableName);
+                        dataValues.Add(sourceColumnName);
+                        dataValues.Add(newSchema);
+                        dataValues.Add(newTableName);
+                        dataValues.Add(newColumnName);
 
-                        foreach (var columnItem in targetTableColumnMap)
-                        {
-                            var sourceColumnName = columnItem.Key;
-                            var newColumnName = columnItem.Value.ReplacementText;
-
-                            dataValues.Clear();
-                            dataValues.Add(sourceTableName);
-                            dataValues.Add(sourceColumnName);
-                            dataValues.Add(newSchema);
-                            dataValues.Add(newTableName);
-                            dataValues.Add(newColumnName);
-
-                            writer.WriteLine(string.Join("\t", dataValues));
-                        }
-
+                        writer.WriteLine(string.Join("\t", dataValues));
                     }
                 }
             }
