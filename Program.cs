@@ -8,6 +8,7 @@ namespace PgSqlViewCreatorHelper
 {
     internal class Program
     {
+        // Ignore Spelling: Conf
 
         private static int Main(string[] args)
         {
