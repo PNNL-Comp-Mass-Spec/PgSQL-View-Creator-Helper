@@ -8,7 +8,6 @@ namespace TableColumnNameMapContainer
 {
     public class NameMapReader : EventNotifier
     {
-
         /// <summary>
         /// Read a five column name map file, which is typically created by sqlserver2pgsql.pl
         /// It is a tab-delimited file with five columns:
@@ -118,7 +117,6 @@ namespace TableColumnNameMapContainer
                 OnErrorEvent(string.Format("Error in LoadMapFile, reading line {0}", linesRead), ex);
                 return false;
             }
-
         }
 
         /// <summary>
@@ -217,7 +215,6 @@ namespace TableColumnNameMapContainer
                 OnErrorEvent(string.Format("Error in LoadSecondaryMapFile, reading line {0}", linesRead), ex);
                 return false;
             }
-
         }
 
         /// <summary>

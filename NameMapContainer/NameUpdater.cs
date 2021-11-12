@@ -29,7 +29,6 @@ namespace TableColumnNameMapContainer
             string dataLine,
             bool updateSchema)
         {
-
             var workingCopy = string.Copy(dataLine);
 
             foreach (var item in tableNameMap)
@@ -68,7 +67,6 @@ namespace TableColumnNameMapContainer
             string dataLine,
             bool updateSchema)
         {
-
             var workingCopy = string.Copy(dataLine);
 
             foreach (var updatedTableName in referencedTables)
@@ -84,7 +82,6 @@ namespace TableColumnNameMapContainer
                         {
                             workingCopy = updatedLine;
                         }
-
                     }
                 }
             }
@@ -101,6 +98,5 @@ namespace TableColumnNameMapContainer
 
             return workingCopy;
         }
-
     }
 }

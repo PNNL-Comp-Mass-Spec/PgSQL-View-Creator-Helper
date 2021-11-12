@@ -30,7 +30,6 @@ namespace PgSqlViewCreatorHelper
             matchedViews.Add(viewName);
         }
 
-
         /// <summary>
         /// Create a merged column name map file
         /// </summary>
@@ -101,13 +100,11 @@ namespace PgSqlViewCreatorHelper
 
                     }
                 }
-
             }
             catch (Exception ex)
             {
                 OnErrorEvent("Error in CreateMergedColumnNameMapFile", ex);
             }
-
         }
 
         public bool ProcessInputFile()
@@ -228,7 +225,6 @@ namespace PgSqlViewCreatorHelper
                 OnErrorEvent("Error in ProcessInputFile", ex);
                 return false;
             }
-
         }
 
         /// <summary>
@@ -320,6 +316,5 @@ namespace PgSqlViewCreatorHelper
 
             return true;
         }
-
     }
 }

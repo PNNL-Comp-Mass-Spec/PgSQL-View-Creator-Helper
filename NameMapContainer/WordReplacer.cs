@@ -52,7 +52,6 @@ namespace TableColumnNameMapContainer
         /// <param name="defaultSchema"></param>
         public WordReplacer(string textToFind, string replacementText, string defaultSchema = "")
         {
-
             TextToFind = textToFind;
             ReplacementText = replacementText;
             DefaultSchema = defaultSchema;
@@ -106,7 +105,6 @@ namespace TableColumnNameMapContainer
             // Add schema
             updatedLine = updatedLine.Replace(ReplacementText, DefaultSchema + "." + ReplacementText);
             return true;
-
         }
 
         /// <summary>

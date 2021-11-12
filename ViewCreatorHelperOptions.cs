@@ -81,7 +81,6 @@ namespace PgSqlViewCreatorHelper
             }
 
             Console.WriteLine();
-
         }
 
         /// <summary>
@@ -106,6 +105,5 @@ namespace PgSqlViewCreatorHelper
 
             return true;
         }
-
     }
 }
