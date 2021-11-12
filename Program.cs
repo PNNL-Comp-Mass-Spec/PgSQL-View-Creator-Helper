@@ -8,12 +8,9 @@ namespace PgSqlViewCreatorHelper
 {
     internal class Program
     {
-        private static DateTime mLastProgressTime;
 
         private static int Main(string[] args)
         {
-            mLastProgressTime = DateTime.UtcNow;
-
             var asmName = typeof(Program).GetTypeInfo().Assembly.GetName();
             var exeName = Path.GetFileName(Assembly.GetExecutingAssembly().Location);       // Alternatively: System.AppDomain.CurrentDomain.FriendlyName
             var version = ViewCreatorHelperOptions.GetAppVersion();
@@ -61,7 +58,6 @@ namespace PgSqlViewCreatorHelper
                 }
 
                 options.OutputSetOptions();
-
             }
             catch (Exception e)
             {
@@ -93,7 +89,6 @@ namespace PgSqlViewCreatorHelper
                 ConsoleMsgUtils.ShowWarning("Processing error");
                 Thread.Sleep(2000);
                 return -1;
-
             }
             catch (Exception ex)
             {
@@ -101,11 +96,6 @@ namespace PgSqlViewCreatorHelper
                 Thread.Sleep(2000);
                 return -1;
             }
-        }
-
-        private static void Processor_DebugEvent(string message)
-        {
-            ConsoleMsgUtils.ShowDebug(message);
         }
 
         private static void Processor_ErrorEvent(string message, Exception ex)
@@ -116,16 +106,6 @@ namespace PgSqlViewCreatorHelper
         private static void Processor_StatusEvent(string message)
         {
             Console.WriteLine(message);
-        }
-
-        private static void Processor_ProgressUpdate(string progressMessage, float percentComplete)
-        {
-            if (DateTime.UtcNow.Subtract(mLastProgressTime).TotalSeconds < 5)
-                return;
-
-            Console.WriteLine();
-            mLastProgressTime = DateTime.UtcNow;
-            Processor_DebugEvent(percentComplete.ToString("0.0") + "%, " + progressMessage);
         }
 
         private static void Processor_WarningEvent(string message)
