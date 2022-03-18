@@ -89,9 +89,10 @@ namespace TableColumnNameMapContainer
 
                         if (targetTableColumnMap.ContainsKey(sourceColumnName))
                         {
-                            OnWarningEvent(string.Format(
+                            OnWarningEvent(
                                 "In file {0}, table {1} has multiple columns with the same source name, {2}",
-                                mapFile.Name, newTableName, sourceColumnName));
+                                mapFile.Name, newTableName, sourceColumnName);
+
                             continue;
                         }
 
@@ -99,9 +100,9 @@ namespace TableColumnNameMapContainer
                         {
                             if (warnDuplicateTargetColumnNames)
                             {
-                                OnWarningEvent(string.Format(
+                                OnWarningEvent(
                                     "In file {0}, table {1} has multiple columns with the same new name, {2}",
-                                    mapFile.Name, newTableName, newColumnName));
+                                    mapFile.Name, newTableName, newColumnName);
                             }
                         }
 
@@ -180,9 +181,9 @@ namespace TableColumnNameMapContainer
                             if (missingTablesWarned.Contains(sourceTableName))
                                 continue;
 
-                            OnWarningEvent(string.Format(
+                            OnWarningEvent(
                                 "Table {0} not found in tableNameMap; ignoring column map info for column {1}",
-                                sourceTableName, sourceColumnName));
+                                sourceTableName, sourceColumnName);
 
                             missingTablesWarned.Add(sourceTableName);
                             continue;
@@ -199,7 +200,7 @@ namespace TableColumnNameMapContainer
                         if (targetTableColumnMap.ContainsKey(sourceColumnName))
                         {
                             // The column rename map has already been defined; this is OK
-                            OnDebugEvent(string.Format("Column mapping already defined for {0} in table {1}", sourceColumnName, sourceTableName));
+                            OnDebugEvent("Column mapping already defined for {0} in table {1}", sourceColumnName, sourceTableName);
                             continue;
                         }
 

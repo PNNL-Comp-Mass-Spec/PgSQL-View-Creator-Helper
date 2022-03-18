@@ -310,7 +310,7 @@ namespace PgSqlViewCreatorHelper
                     continue;
                 }
 
-                OnDebugEvent(string.Format("Updating {0} \n        to {1}", originalLine, workingCopy));
+                OnDebugEvent("Updating {0} \n        to {1}", originalLine, workingCopy);
                 writer.WriteLine(workingCopy);
             }
 
