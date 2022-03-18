@@ -15,7 +15,9 @@ namespace TableColumnNameMapContainer
         /// </summary>
         /// <param name="mapFile">Tab-delimited text file to read</param>
         /// <param name="defaultSchema">Default schema name</param>
-        /// <param name="warnDuplicateTargetColumnNames">If true, warn the user at the console if multiple columns in a table have the same target column name</param>
+        /// <param name="warnDuplicateTargetColumnNames">
+        /// If true, warn the user at the console if multiple columns in a table have the same target column name
+        /// </param>
         /// <param name="tableNameMap">
         /// Dictionary where keys are the original (source) table names
         /// and values are WordReplacer classes that track the new table names and new column names in PostgreSQL
@@ -130,8 +132,7 @@ namespace TableColumnNameMapContainer
         public bool LoadTableColumnMapFile(
             FileSystemInfo mapFile,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
-            IDictionary<string, Dictionary<string, WordReplacer>> columnNameMap
-            )
+            IDictionary<string, Dictionary<string, WordReplacer>> columnNameMap)
         {
             var linesRead = 0;
 
