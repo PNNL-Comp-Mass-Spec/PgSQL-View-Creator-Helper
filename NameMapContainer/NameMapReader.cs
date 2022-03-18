@@ -70,11 +70,7 @@ namespace TableColumnNameMapContainer
 
                     if (!tableNameMap.ContainsKey(sourceTableName))
                     {
-                        string newSchemaToUse;
-                        if (string.IsNullOrEmpty(newSchema))
-                            newSchemaToUse = defaultSchema;
-                        else
-                            newSchemaToUse = newSchema;
+                        var newSchemaToUse = string.IsNullOrEmpty(newSchema) ? defaultSchema : newSchema;
 
                         var replacer = new WordReplacer(sourceTableName, newTableName, newSchemaToUse);
                         tableNameMap.Add(sourceTableName, replacer);
