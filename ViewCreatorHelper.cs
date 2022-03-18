@@ -243,7 +243,6 @@ namespace PgSqlViewCreatorHelper
         /// </param>
         /// <param name="writer"></param>
         /// <param name="matchedViews">List of matched view names</param>
-        /// <returns></returns>
         private bool ProcessCachedLines(
             IEnumerable<string> cachedLines,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,

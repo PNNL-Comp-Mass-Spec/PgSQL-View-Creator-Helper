@@ -25,7 +25,6 @@ namespace TableColumnNameMapContainer
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
         /// names should not have double quotes around them
         /// </param>
-        /// <returns></returns>
         public bool LoadSqlServerToPgSqlColumnMapFile(
             FileSystemInfo mapFile,
             string defaultSchema,
@@ -134,7 +133,6 @@ namespace TableColumnNameMapContainer
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
         /// names should not have double quotes around them
         /// </param>
-        /// <returns></returns>
         public bool LoadTableColumnMapFile(
             FileSystemInfo mapFile,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
@@ -220,7 +218,6 @@ namespace TableColumnNameMapContainer
         /// If objectName does not contain any spaces, remove the double quotes surrounding it
         /// </summary>
         /// <param name="objectName"></param>
-        /// <returns></returns>
         private string PossiblyUnquote(string objectName)
         {
             if (objectName.Contains(' '))

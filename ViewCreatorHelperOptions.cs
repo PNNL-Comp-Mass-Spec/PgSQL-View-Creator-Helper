@@ -48,7 +48,6 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Get the program version
         /// </summary>
-        /// <returns></returns>
         public static string GetAppVersion()
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version + " (" + PROGRAM_DATE + ")";
@@ -86,7 +85,6 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Validate the options
         /// </summary>
-        /// <returns></returns>
         public bool ValidateArgs(out string errorMessage)
         {
             if (string.IsNullOrWhiteSpace(InputScriptFile))

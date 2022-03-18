@@ -59,7 +59,6 @@ namespace TableColumnNameMapContainer
         /// <param name="referencedTables">Table names found in the region that contains the data line (using new table names, not the source table name)</param>
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
-        /// <returns></returns>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             SortedSet<string> referencedTables,
