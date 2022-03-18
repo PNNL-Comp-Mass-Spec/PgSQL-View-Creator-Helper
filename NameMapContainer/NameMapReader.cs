@@ -218,10 +218,7 @@ namespace TableColumnNameMapContainer
         /// <param name="objectName"></param>
         private string PossiblyUnquote(string objectName)
         {
-            if (objectName.Contains(' '))
-                return objectName;
-
-            return objectName.Trim('"');
+            return objectName.Contains(' ') ? objectName : objectName.Trim('"');
         }
     }
 }
