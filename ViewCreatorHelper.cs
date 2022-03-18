@@ -10,6 +10,8 @@ namespace PgSqlViewCreatorHelper
 {
     public class ViewCreatorHelper : EventNotifier
     {
+        // Ignore Spelling: dms, dpkg, mc, ont, sw
+
         private readonly ViewCreatorHelperOptions mOptions;
 
         /// <summary>
@@ -169,7 +171,15 @@ namespace PgSqlViewCreatorHelper
                 using (var reader = new StreamReader(new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (var writer = new StreamWriter(new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read)))
                 {
-                    writer.WriteLine("SET search_path TO \"$user\", public, mc;");
+                    // The default search path is: "$user", public
+                    // The DMS database customizes this, as shown here
+
+                    // Command "SET search_path" updates the search path for the current session
+
+                    // To update permanently, use:
+                    // ALTER DATABASE dms SET search_path=public, sw, cap, dpkg, mc, ont;
+
+                    writer.WriteLine("SET search_path TO public, sw, cap, dpkg, mc, ont;");
                     writer.WriteLine("SHOW search_path;");
                     writer.WriteLine();
 
