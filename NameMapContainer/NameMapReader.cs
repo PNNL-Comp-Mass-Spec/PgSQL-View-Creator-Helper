@@ -95,14 +95,12 @@ namespace TableColumnNameMapContainer
                         continue;
                     }
 
-                    if (targetTableColumnMap.Values.Any(item => item.ReplacementText.Equals(newColumnName)))
+                    if (targetTableColumnMap.Values.Any(item => item.ReplacementText.Equals(newColumnName))
+                        && warnDuplicateTargetColumnNames)
                     {
-                        if (warnDuplicateTargetColumnNames)
-                        {
-                            OnWarningEvent(
-                                "In file {0}, table {1} has multiple columns with the same new name, {2}",
-                                mapFile.Name, newTableName, newColumnName);
-                        }
+                        OnWarningEvent(
+                            "In file {0}, table {1} has multiple columns with the same new name, {2}",
+                            mapFile.Name, newTableName, newColumnName);
                     }
 
                     var columnNameReplacer = new WordReplacer(sourceColumnName, newColumnName);
