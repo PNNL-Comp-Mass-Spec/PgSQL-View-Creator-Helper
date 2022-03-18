@@ -11,7 +11,6 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        #region "Properties"
         public const string PROGRAM_DATE = "March 18, 2022";
 
         [Option("Input", "I", ArgPosition = 1, HelpShowsDefault = false, IsInputFilePath = true,
@@ -32,8 +31,6 @@ namespace PgSqlViewCreatorHelper
         [Option("DefaultSchema", "Schema", HelpShowsDefault = false,
             HelpText = "Schema to prefix table names with (when the name does not have a schema)")]
         public string DefaultSchema { get; set; }
-
-        #endregion
 
         /// <summary>
         /// Constructor
