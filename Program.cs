@@ -89,18 +89,18 @@ namespace PgSqlViewCreatorHelper
                 {
                     Console.WriteLine();
                     Console.WriteLine("Processing complete");
-                    Thread.Sleep(1500);
+                    Thread.Sleep(500);
                     return 0;
                 }
 
                 ConsoleMsgUtils.ShowWarning("Processing error");
-                Thread.Sleep(2000);
+                Thread.Sleep(1500);
                 return -1;
             }
             catch (Exception ex)
             {
                 ConsoleMsgUtils.ShowError("Error occurred in Program->Main", ex);
-                Thread.Sleep(2000);
+                Thread.Sleep(1500);
                 return -1;
             }
         }
