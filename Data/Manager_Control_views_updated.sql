@@ -1,5 +1,9 @@
-SET search_path TO "$user", public, mc;
+SET search_path TO public, sw, cap, dpkg, mc, ont;
 SHOW search_path;
+
+-- PostgreSQL stores views as Parse Trees, meaning any whitespace that is present in the CREATE VIEW statements will be lost
+--
+-- The PgSQL View Creator Helper will convert any comments on views to COMMENT ON VIEW statements
 
 \set ON_ERROR_STOP
 BEGIN;
@@ -13,6 +17,7 @@ ALTER TABLE "mc"."t_param_value" ALTER COLUMN "entered_by" SET DEFAULT session_u
 ALTER TABLE "mc"."t_param_value" ALTER COLUMN "last_affected" SET DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE "mc"."t_usage_log" ALTER COLUMN "posting_time" SET DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE "mc"."t_usage_stats" ALTER COLUMN "last_posting_time" SET DEFAULT CURRENT_TIMESTAMP;
+
 CREATE OR REPLACE VIEW "mc"."v_param_value"
 AS
 SELECT M.mgr_name,
@@ -35,8 +40,6 @@ SELECT M.mgr_name,
 
 CREATE OR REPLACE VIEW "mc"."v_mgr_work_dir"
 AS
--- This database does not keep track of the server name that a given manager is running on
--- Thus, this query includes the generic text ServerName for the WorkDir path, unless the WorkDir is itself a network share
 SELECT M_Name,
        CASE
            WHEN VALUE LIKE '\\%' THEN VALUE
@@ -48,6 +51,8 @@ WHERE (ParamName = 'workdir')
 
 
 ;
+
+COMMENT ON VIEW "mc"."v_mgr_work_dir" IS 'This database does not keep track of the server name that a given manager is running on. Thus, this query includes the generic text ServerName for the WorkDir path, unless the WorkDir is itself a network share';
 
 CREATE OR REPLACE VIEW "mc"."v_manager_list_by_type"
 AS
@@ -378,26 +383,27 @@ SELECT param_id,
 ;
 
 COMMIT;
-SELECT * FROM "mc"."v_param_value" ;
+
+SELECT * FROM "mc"."v_param_value";
 SELECT * FROM "mc"."v_mgr_work_dir";
-SELECT * FROM "mc"."v_manager_list_by_type" ;
-SELECT * FROM "mc"."v_manager_type_report_ex" ;
-SELECT * FROM "mc"."v_manager_type_report" ;
-SELECT * FROM "mc"."v_manager_type_report_defaults" ;
-SELECT * FROM "mc"."v_all_mgr_params_by_mgr_type" ;
-SELECT * FROM "mc"."v_analysis_job_processors_list_report" ;
-SELECT * FROM "mc"."v_analysis_mgr_params_active_and_debug_level" ;
-SELECT * FROM "mc"."v_analysis_mgr_params_update_required" ;
-SELECT * FROM "mc"."v_manager_entry" ;
-SELECT * FROM "mc"."v_manager_list_by_type_picklist" ;
-SELECT * FROM "mc"."v_manager_type_detail" ;
-SELECT * FROM "mc"."v_manager_type_report_all" ;
-SELECT * FROM "mc"."v_manager_update_required" ;
-SELECT * FROM "mc"."v_managers_by_broadcast_queue_topic" ;
-SELECT * FROM "mc"."v_mgr_param_defaults" ;
-SELECT * FROM "mc"."v_mgr_params" ;
-SELECT * FROM "mc"."v_mgr_params_by_mgr_type" ;
-SELECT * FROM "mc"."v_mgr_types_by_param" ;
-SELECT * FROM "mc"."v_old_param_value" ;
-SELECT * FROM "mc"."v_param_name_picklist" ;
-SELECT * FROM "mc"."v_param_id_entry" ;
+SELECT * FROM "mc"."v_manager_list_by_type";
+SELECT * FROM "mc"."v_manager_type_report_ex";
+SELECT * FROM "mc"."v_manager_type_report";
+SELECT * FROM "mc"."v_manager_type_report_defaults";
+SELECT * FROM "mc"."v_all_mgr_params_by_mgr_type";
+SELECT * FROM "mc"."v_analysis_job_processors_list_report";
+SELECT * FROM "mc"."v_analysis_mgr_params_active_and_debug_level";
+SELECT * FROM "mc"."v_analysis_mgr_params_update_required";
+SELECT * FROM "mc"."v_manager_entry";
+SELECT * FROM "mc"."v_manager_list_by_type_picklist";
+SELECT * FROM "mc"."v_manager_type_detail";
+SELECT * FROM "mc"."v_manager_type_report_all";
+SELECT * FROM "mc"."v_manager_update_required";
+SELECT * FROM "mc"."v_managers_by_broadcast_queue_topic";
+SELECT * FROM "mc"."v_mgr_param_defaults";
+SELECT * FROM "mc"."v_mgr_params";
+SELECT * FROM "mc"."v_mgr_params_by_mgr_type";
+SELECT * FROM "mc"."v_mgr_types_by_param";
+SELECT * FROM "mc"."v_old_param_value";
+SELECT * FROM "mc"."v_param_name_picklist";
+SELECT * FROM "mc"."v_param_id_entry";
