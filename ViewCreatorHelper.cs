@@ -124,6 +124,10 @@ namespace PgSqlViewCreatorHelper
             }
         }
 
+        /// <summary>
+        /// Process the input file
+        /// </summary>
+        /// <returns>True if successful, false if an error</returns>
         public bool ProcessInputFile()
         {
             var cachedLines = new List<string>();
@@ -143,8 +147,9 @@ namespace PgSqlViewCreatorHelper
                     return false;
                 }
 
-                var outputFilePath = Path.Combine(inputFile.DirectoryName,
-                                                  Path.GetFileNameWithoutExtension(inputFile.Name) + "_updated" + inputFile.Extension);
+                var outputFilePath = Path.Combine(
+                    inputFile.DirectoryName,
+                    Path.GetFileNameWithoutExtension(inputFile.Name) + "_updated" + inputFile.Extension);
 
                 var mapFile = new FileInfo(mOptions.ColumnNameMapFile);
                 if (!mapFile.Exists)

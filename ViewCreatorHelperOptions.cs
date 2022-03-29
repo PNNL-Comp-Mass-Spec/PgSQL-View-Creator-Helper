@@ -11,7 +11,7 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        public const string PROGRAM_DATE = "March 18, 2022";
+        public const string PROGRAM_DATE = "March 28, 2022";
 
         [Option("Input", "I", ArgPosition = 1, HelpShowsDefault = false, IsInputFilePath = true,
             HelpText = "SQL script file to process")]
@@ -75,6 +75,7 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Validate the options
         /// </summary>
+        /// <returns>True if options are valid, false if /I or /M is missing</returns>
         public bool ValidateArgs(out string errorMessage)
         {
             if (string.IsNullOrWhiteSpace(InputScriptFile))

@@ -27,6 +27,7 @@ namespace TableColumnNameMapContainer
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
         /// names should not have double quotes around them
         /// </param>
+        /// <returns>True if successful, false if an error</returns>
         public bool LoadSqlServerToPgSqlColumnMapFile(
             FileSystemInfo mapFile,
             string defaultSchema,
@@ -129,6 +130,7 @@ namespace TableColumnNameMapContainer
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
         /// names should not have double quotes around them
         /// </param>
+        /// <returns>True if successful, false if an error</returns>
         public bool LoadTableColumnMapFile(
             FileSystemInfo mapFile,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
