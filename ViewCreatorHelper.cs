@@ -23,12 +23,19 @@ namespace PgSqlViewCreatorHelper
             mOptions = options;
         }
 
-        private void AppendCreateView(Match match, TextWriter writer, ICollection<string> matchedViews)
+        private void AppendCreateView(
+            Match match,
+            TextWriter writer,
+            ICollection<string> matchedViews,
+            out string viewName)
         {
-            var viewName = match.Groups["ViewName"].Value;
+            viewName = match.Groups["ViewName"].Value.Trim();
+
             var newCreateViewLine = "CREATE OR REPLACE VIEW " + viewName.Trim();
+
             OnDebugEvent(newCreateViewLine);
             writer.WriteLine(newCreateViewLine);
+
             matchedViews.Add(viewName);
         }
 
@@ -294,21 +301,26 @@ namespace PgSqlViewCreatorHelper
                 }
             }
 
+            var viewNames = new List<string>();
+            var viewComments = new List<string>();
+
             // Look for table names in cachedLines, updating as appropriate
             foreach (var dataLine in cachedLines)
             {
                 var match1 = createViewAsMatcher.Match(dataLine);
                 if (match1.Success)
                 {
-                    AppendCreateView(match1, writer, matchedViews);
+                    AppendCreateView(match1, writer, matchedViews, out var viewName);
                     writer.WriteLine("AS");
+                    viewNames.Add(viewName);
                     continue;
                 }
 
                 var match2 = createViewMatcher.Match(dataLine);
                 if (match2.Success)
                 {
-                    AppendCreateView(match2, writer, matchedViews);
+                    AppendCreateView(match2, writer, matchedViews, out var viewName);
+                    viewNames.Add(viewName);
                     continue;
                 }
 
@@ -318,9 +330,35 @@ namespace PgSqlViewCreatorHelper
             }
 
             // Look for column names in updatedLines, updating as appropriate
+            // Also look for comments
             foreach (var dataLine in updatedLines)
             {
                 var originalLine = dataLine.Key;
+
+                var trimmedLine = originalLine.Trim();
+                string commentText;
+
+                if (viewNames.Count > 0 && trimmedLine.StartsWith("--"))
+                {
+                    if (trimmedLine.Length <= 2)
+                    {
+                        // Skip this line
+                        continue;
+                    }
+
+                    // Cache the comment
+                    commentText = trimmedLine.Substring(2).Trim();
+                    viewComments.Add(commentText.Replace('\'', '"'));
+                    continue;
+                }
+
+                var commentStartIndex = trimmedLine.IndexOf("--", StringComparison.Ordinal);
+                if (viewNames.Count > 0 && commentStartIndex > 0 && commentStartIndex + 2 < trimmedLine.Length)
+                {
+                    // Cache the comment, but also include in the view DDL for reference
+                    commentText = trimmedLine.Substring(commentStartIndex + 2).Trim();
+                    viewComments.Add(commentText.Replace('\'', '"'));
+                }
 
                 var workingCopy = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, dataLine.Value, true);
 
@@ -343,6 +381,17 @@ namespace PgSqlViewCreatorHelper
 
                 OnDebugEvent("Updating {0} \n        to {1}", originalLine, workingCopy);
                 writer.WriteLine(workingCopy);
+            }
+
+            if (viewComments.Count == 0)
+                return true;
+
+            foreach (var viewName in viewNames)
+            {
+                var viewComment = string.Join(". ", viewComments);
+
+                writer.WriteLine("COMMENT ON VIEW {0} IS '{1}';", viewName, viewComment);
+                writer.WriteLine();
             }
 
             return true;
