@@ -254,7 +254,7 @@ namespace PgSqlViewCreatorHelper
         /// <param name="writer"></param>
         /// <param name="matchedViews">List of matched view names</param>
         private bool ProcessCachedLines(
-            IEnumerable<string> cachedLines,
+            List<string> cachedLines,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             TextWriter writer,
@@ -271,6 +271,28 @@ namespace PgSqlViewCreatorHelper
 
             var stringConcatenationMatcher1 = new Regex(@"' *\+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             var stringConcatenationMatcher2 = new Regex(@"\+ *'", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+            // Look for any use of CROSS APPLY or OUTER APPLY
+            foreach (var dataLine in cachedLines)
+            {
+                if (dataLine.IndexOf("cross apply", StringComparison.OrdinalIgnoreCase) > 0)
+                {
+                    writer.WriteLine("-- This view uses CROSS APPLY, which is not supported by PostgreSQL");
+                    writer.WriteLine("-- Consider using INNER JOIN LATERAL instead");
+                    writer.WriteLine("-- See also https://stackoverflow.com/a/35873193/1179467 and https://www.postgresql.org/docs/current/sql-select.html");
+                    writer.WriteLine();
+                    break;
+                }
+
+                if (dataLine.IndexOf("outer apply", StringComparison.OrdinalIgnoreCase) > 0)
+                {
+                    writer.WriteLine("-- This view uses OUTER APPLY, which is not supported by PostgreSQL");
+                    writer.WriteLine("-- Consider using LEFT JOIN LATERAL instead");
+                    writer.WriteLine("-- See also https://stackoverflow.com/a/35873193/1179467 and https://www.postgresql.org/docs/current/sql-select.html");
+                    writer.WriteLine();
+                    break;
+                }
+            }
 
             // Look for table names in cachedLines, updating as appropriate
             foreach (var dataLine in cachedLines)
