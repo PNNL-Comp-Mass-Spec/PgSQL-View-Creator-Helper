@@ -39,6 +39,14 @@ namespace PgSqlViewCreatorHelper
             matchedViews.Add(viewName);
         }
 
+        private void AppendFormattingComment(TextWriter writer)
+        {
+            writer.WriteLine("-- PostgreSQL stores views as Parse Trees, meaning any whitespace that is present in the CREATE VIEW statements will be lost");
+            writer.WriteLine("--");
+            writer.WriteLine("-- The PgSQL View Creator Helper will convert any comments on views to COMMENT ON VIEW statements");
+            writer.WriteLine();
+        }
+
         /// <summary>
         /// Create a merged column name map file
         /// </summary>
@@ -190,6 +198,8 @@ namespace PgSqlViewCreatorHelper
                     writer.WriteLine("SHOW search_path;");
                     writer.WriteLine();
 
+                    var viewsProcessed = 0;
+
                     while (!reader.EndOfStream)
                     {
                         var dataLine = reader.ReadLine();
@@ -202,6 +212,9 @@ namespace PgSqlViewCreatorHelper
 
                         if (dataLine.Trim().StartsWith("Create View", StringComparison.OrdinalIgnoreCase))
                         {
+                            if (viewsProcessed == 0)
+                                AppendFormattingComment(writer);
+
                             if (cachedLines.Count > 0)
                             {
                                 var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews);
@@ -209,6 +222,11 @@ namespace PgSqlViewCreatorHelper
                                     return false;
 
                                 cachedLines.Clear();
+
+                                if (viewsProcessed == 0)
+                                    writer.WriteLine();
+
+                                viewsProcessed++;
                             }
 
                             cachedLines.Add(dataLine);
@@ -226,6 +244,8 @@ namespace PgSqlViewCreatorHelper
 
                         cachedLines.Clear();
                     }
+
+                    writer.WriteLine();
 
                     foreach (var viewName in matchedViews)
                     {
