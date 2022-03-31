@@ -16,7 +16,7 @@ namespace TableColumnNameMapContainer
         /// WHERE identifier LIKE '[0-9]%'
         /// </summary>
         /// <remarks>If a match is found, switch from LIKE to SIMILAR TO</remarks>
-        private static readonly Regex mLikeMatcher = new(@"\bLIKE(?<Pattern> *'.*\[[^]]+\].*')", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex mLikeMatcher = new(@"\bLIKE(?<ComparisonSpec>\s*'.*\[[^]]+\].*')", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// Look for known table names in the data line
@@ -95,7 +95,7 @@ namespace TableColumnNameMapContainer
             if (mLikeMatcher.IsMatch(workingCopy))
             {
                 // Switch from LIKE to SIMILAR TO
-                return mLikeMatcher.Replace(workingCopy, "SIMILAR TO${Pattern}");
+                return mLikeMatcher.Replace(workingCopy, "SIMILAR TO${ComparisonSpec}");
             }
 
             // Replace square bracket delimited names with double quote delimited names
