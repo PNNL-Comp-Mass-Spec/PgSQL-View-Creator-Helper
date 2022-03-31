@@ -8,7 +8,15 @@ namespace TableColumnNameMapContainer
         /// <summary>
         /// This is used to find names surrounded by square brackets
         /// </summary>
+        /// <remarks>The brackets will be changed to double quotes</remarks>
         private static readonly Regex mAliasMatcher = new(@"\[(?<AliasName>[^]]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// This is used to match expressions of the form
+        /// WHERE identifier LIKE '[0-9]%'
+        /// </summary>
+        /// <remarks>If a match is found, switch from LIKE to SIMILAR TO</remarks>
+        private static readonly Regex mLikeMatcher = new(@"\bLIKE(?<Pattern> *'.*\[[^]]+\].*')", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// Look for known table names in the data line
@@ -82,6 +90,12 @@ namespace TableColumnNameMapContainer
                         }
                     }
                 }
+            }
+
+            if (mLikeMatcher.IsMatch(workingCopy))
+            {
+                // Switch from LIKE to SIMILAR TO
+                return mLikeMatcher.Replace(workingCopy, "SIMILAR TO${Pattern}");
             }
 
             // Replace square bracket delimited names with double quote delimited names
