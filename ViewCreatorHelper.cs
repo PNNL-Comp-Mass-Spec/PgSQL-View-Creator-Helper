@@ -304,6 +304,8 @@ namespace PgSqlViewCreatorHelper
             var stringConcatenationMatcher1 = new Regex(@"' *\+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             var stringConcatenationMatcher2 = new Regex(@"\+ *'", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+            var leadingTabReplacer = new Regex(@"^\t+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
             // Look for any use of CROSS APPLY or OUTER APPLY
             foreach (var dataLine in cachedLines)
             {
@@ -397,6 +399,15 @@ namespace PgSqlViewCreatorHelper
                 {
                     workingCopy = stringConcatenationMatcher2.Replace(workingCopy, "|| '");
                 }
+
+                // Replace leading tabs with spaces
+                var leadingTabMatch = leadingTabReplacer.Match(workingCopy);
+                if (leadingTabMatch.Success)
+                {
+                    workingCopy = new string(' ', leadingTabMatch.Length * 4) + workingCopy.TrimStart('\t');
+                }
+
+                workingCopy = workingCopy.TrimEnd().TrimEnd('\t').TrimEnd();
 
                 if (originalLine.Equals(workingCopy))
                 {
