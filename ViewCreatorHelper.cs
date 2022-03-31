@@ -301,8 +301,8 @@ namespace PgSqlViewCreatorHelper
             var createViewMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             var createViewAsMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+) +AS *$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-            var stringConcatenationMatcher1 = new Regex(@"' *\+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            var stringConcatenationMatcher2 = new Regex(@"\+ *'", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            var stringConcatenationMatcher1 = new Regex(@"'[\t ]*\+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            var stringConcatenationMatcher2 = new Regex(@"\+[\t ]*'", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
             var leadingTabReplacer = new Regex(@"^\t+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
