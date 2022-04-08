@@ -4,8 +4,8 @@ This program processes a SQL DDL file with CREATE VIEW commands and renames the
 column and table names referenced by the views to use new names defined in a
 mapping file (or files).
 
-In addition, it creates a new ColumnNameMap_merged.txt file that merges the contents of the /Map and /Map2 files
-* The five columns in the merged file are the same as in the /Map file
+In addition, it creates a new `ColumnNameMap_merged.txt` file that merges the contents of the `/Map` and `/Map2` files
+* The five columns in the merged file are the same as in the `/Map` file
 
 ## Console Switches
 
@@ -43,7 +43,7 @@ The `/Map` file is is a tab-delimited text file with five columns
 
 
 Use `/Map2` to optionally specify a secondary map file, which is a tab-delimited text file with three columns
-* The Secondary Map file matches the file defined for the `ColumnMap` parameter when using the DB_Schema_Export_Tool (https://github.com/PNNL-Comp-Mass-Spec/DB-Schema-Export-Tool) to pre-process an existing DDL file
+* The Secondary Map file matches the file defined for the `ColumnMap` parameter when using the DB Schema Export Tool (https://github.com/PNNL-Comp-Mass-Spec/DB-Schema-Export-Tool) to pre-process an existing DDL file
 * Example data:
 
 | SourceTableName         | SourceColumnName     | TargetColumnName     |
@@ -86,5 +86,3 @@ in compliance with the License.  You may obtain a copy of the License at
 https://opensource.org/licenses/BSD-2-Clause
 
 Copyright 2019 Battelle Memorial Institute
-
-
