@@ -17,13 +17,63 @@ PgSqlViewCreatorHelper.exe
   /Map:MapFilePath
   [/Map2:SecondaryMapFilePath]
   [/Schema:DefaultSchemaName]
+  [/V]
   [/ParamFile:ParamFileName.conf] [/CreateParamFile]
 ```
 
 The input file should be a SQL text file with CREATE VIEW statements
+* The program is primarily designed to update the DBName_unsure.sql file created by Perl script sqlserver2pgsql.pl (https://github.com/PNNL-Comp-Mass-Spec/sqlserver2pgsql) 
+* Example input file statements:
+
+```PLpgSQL
+ALTER TABLE "public"."t_campaign" ADD CONSTRAINT "ck_t_campaign_campaign_name_white_space" CHECK ((dbo].[udf_whitespace_chars]([campaign_num,(1))=(0)));
+ALTER TABLE "public"."t_dataset" ADD CONSTRAINT "ck_t_dataset_dataset_name_not_empty" CHECK ((COALESCE(dataset_num,'')<>''));
+ALTER TABLE "public"."t_dataset" ADD CONSTRAINT "ck_t_dataset_dataset_name_white_space" CHECK ((dbo].[udf_whitespace_chars]([dataset_num,(0))=(0)));
+ALTER TABLE "public"."t_dataset" ADD CONSTRAINT "ck_t_dataset_ds_folder_name_not_empty" CHECK ((COALESCE(ds_folder_name,'')<>''));
+
+CREATE VIEW "public"."v_user_entry" 
+AS
+SELECT U_PRN AS Username,
+       U_HID AS HanfordIDNum,
+       'Last Name, First Name, and Email are auto-updated when "User Update" = Y' As EntryNote,
+       -- Obsolete: U_Payroll AS Payroll,
+       U_Name AS LastNameFirstName,
+       U_email as Email,
+       U_Status AS UserStatus,
+       U_update AS UserUpdate,
+       public.GetUserOperationsList(ID) AS OperationsList,
+       U_comment AS Comment
+	FROM public.T_Users
+;
+```
+
+* Example output file statements:
+```PLpgSQL
+ALTER TABLE "public"."t_campaign" ADD CONSTRAINT "ck_t_campaign_campaign_name_white_space" CHECK (("udf_whitespace_chars"(campaign,(1))=(0)));
+ALTER TABLE "public"."t_dataset" ADD CONSTRAINT "ck_t_dataset_dataset_name_not_empty" CHECK ((COALESCE(dataset,'')<>''));
+ALTER TABLE "public"."t_dataset" ADD CONSTRAINT "ck_t_dataset_dataset_name_white_space" CHECK (("udf_whitespace_chars"(dataset,(0))=(0)));
+ALTER TABLE "public"."t_dataset" ADD CONSTRAINT "ck_t_dataset_ds_folder_name_not_empty" CHECK ((COALESCE(folder_name,'')<>''));
+
+CREATE OR REPLACE VIEW "public"."v_user_entry"
+AS
+SELECT u_prn AS Username,
+       u_hid AS HanfordIDNum,
+       'Last Name, First Name, and Email are auto-updated when "User Update" = Y' As EntryNote,
+       u_name AS LastNameFirstName,
+       u_email as Email,
+       u_status AS UserStatus,
+       u_update AS UserUpdate,
+       public.GetUserOperationsList(user_id) AS OperationsList,
+       u_comment AS Comment
+    FROM public.t_users
+;
+
+COMMENT ON VIEW "public"."v_user_entry" IS 'Obsolete: U_Payroll AS Payroll,';
+```
+
 
 The `/Map` file is is a tab-delimited text file with five columns
-* The Map file matches the format of the NameMap file created by sqlserver2pgsql (https://github.com/PNNL-Comp-Mass-Spec/sqlserver2pgsql)
+* The Map file matches the format of the NameMap file created by Perl script sqlserver2pgsql.pl
 * Example data:
 
 | SourceTable   | SourceName           | Schema | NewTable        | NewName                 |
@@ -34,8 +84,8 @@ The `/Map` file is is a tab-delimited text file with five columns
 | T_Log_Entries | type                 | mc     | "t_log_entries" | "type"                  |
 | T_Log_Entries | message              | mc     | "t_log_entries" | "message"               |
 | T_Log_Entries | Entered_By           | mc     | "t_log_entries" | "entered_by"            |
-| T_Mgrs        | m_id                 | mc     | "t_mgrs"        | "mgr_id"                  |
-| T_Mgrs        | m_name               | mc     | "t_mgrs"        | "mgr_name"                |
+| T_Mgrs        | m_id                 | mc     | "t_mgrs"        | "mgr_id"                |
+| T_Mgrs        | m_name               | mc     | "t_mgrs"        | "mgr_name"              |
 | T_Mgrs        | mgr_type_id          | mc     | "t_mgrs"        | "mgr_type_id"           |
 | T_Mgrs        | param_value_changed  | mc     | "t_mgrs"        | "param_value_changed"   |
 | T_Mgrs        | control_from_website | mc     | "t_mgrs"        | "control_from_website"  |
@@ -62,6 +112,8 @@ Use `/Map2` to optionally specify a secondary map file, which is a tab-delimited
 
 
 Use `/Schema` to specify a default schema name to add before all table names (that don't already have a schema name prefix)
+
+Use `/V` to enable verbose mode, displaying the old and new version of each updated line
 
 The processing options can be specified in a parameter file using `/ParamFile:Options.conf` or `/Conf:Options.conf`
 * Define options using the format `ArgumentName=Value`
