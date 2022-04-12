@@ -134,6 +134,9 @@ namespace PgSqlViewCreatorHelper
 
             try
             {
+                var unmatchedStartingBracketMatcher = new Regex(@"(?<FieldName>[( ][a-z_]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                var unmatchedEndingBracketMatcher = new Regex(@"\[(?<FieldName>[a-z_]+[, ])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
                 var inputFile = new FileInfo(mOptions.InputScriptFile);
                 if (!inputFile.Exists)
                 {
@@ -235,6 +238,42 @@ namespace PgSqlViewCreatorHelper
                             }
 
                             cachedLines.Add(dataLine);
+                            continue;
+                        }
+
+                        if (dataLine.Trim().StartsWith("Alter Table", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var updatedLine = dataLine.Replace("(dbo].", "(");
+
+                            while (true)
+                            {
+                                var match = unmatchedStartingBracketMatcher.Match(updatedLine);
+
+                                if (match.Success)
+                                {
+                                    updatedLine = updatedLine.Replace(match.Value, match.Groups["FieldName"].Value);
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+
+                            while (true)
+                            {
+                                var match = unmatchedEndingBracketMatcher.Match(updatedLine);
+
+                                if (match.Success)
+                                {
+                                    updatedLine = updatedLine.Replace(match.Value, match.Groups["FieldName"].Value);
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+
+                            cachedLines.Add(updatedLine);
                             continue;
                         }
 
