@@ -32,6 +32,10 @@ namespace PgSqlViewCreatorHelper
             HelpText = "Schema to prefix table names with (when the name does not have a schema)")]
         public string DefaultSchema { get; set; }
 
+        [Option("Verbose", "V", HelpShowsDefault = true,
+            HelpText = "When true, display the old and new version of each updated line")]
+        public bool VerboseOutput { get; set; } = true;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -68,6 +72,8 @@ namespace PgSqlViewCreatorHelper
 
             Console.WriteLine(" {0,-35} {1}", "Default schema name:",
                 string.IsNullOrWhiteSpace(DefaultSchema) ? "not defined" : DefaultSchema);
+
+            Console.WriteLine(" {0,-35} {1}", "Verbose Output:", VerboseOutput);
 
             Console.WriteLine();
         }

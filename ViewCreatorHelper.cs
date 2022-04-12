@@ -454,7 +454,11 @@ namespace PgSqlViewCreatorHelper
                     continue;
                 }
 
-                OnDebugEvent("Updating {0} \n        to {1}", originalLine, workingCopy);
+                if (mOptions.VerboseOutput)
+                {
+                    OnDebugEvent("Updating {0} \n        to {1}", originalLine, workingCopy);
+                }
+
                 writer.WriteLine(workingCopy);
             }
 
