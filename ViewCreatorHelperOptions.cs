@@ -11,20 +11,23 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        public const string PROGRAM_DATE = "March 31, 2022";
+        public const string PROGRAM_DATE = "April 12, 2022";
 
         [Option("Input", "I", ArgPosition = 1, HelpShowsDefault = false, IsInputFilePath = true,
             HelpText = "SQL script file to process")]
         public string InputScriptFile { get; set; }
 
         [Option("Map", "M", ArgPosition = 2, HelpShowsDefault = false, IsInputFilePath = true,
-            HelpText = "Column name map file (typically created by sqlserver2pgsql.pl); tab-delimited file with five columns:\n" +
+            HelpText = "Column name map file (typically created by sqlserver2pgsql.pl)\n" +
+                       "Tab-delimited file with five columns:\n" +
                        "SourceTable  SourceName  Schema  NewTable  NewName")]
         public string ColumnNameMapFile { get; set; }
 
         [Option("Map2", "AltMap", HelpShowsDefault = false, IsInputFilePath = true,
-            HelpText = "Alternative column name map file (typically sent to DB_Schema_Export_Tool.exe via the ColumnMap parameter when using the ExistingDDL option " +
-                       "to pre-process a DDL file prior to calling sqlserver2pgsql.pl); tab-delimited file with three columns:\n" +
+            HelpText = "Alternative column name map file\n" +
+                       "(typically sent to DB_Schema_Export_Tool.exe via the ColumnMap parameter when using the ExistingDDL option " +
+                       "to pre-process a DDL file prior to calling sqlserver2pgsql.pl)\n" +
+                       "Tab-delimited file with three columns:\n" +
                        "SourceTableName  SourceColumnName  TargetColumnName")]
         public string ColumnNameMapFile2 { get; set; }
 
