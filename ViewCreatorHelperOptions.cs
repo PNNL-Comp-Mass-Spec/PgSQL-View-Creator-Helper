@@ -11,7 +11,7 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        public const string PROGRAM_DATE = "April 12, 2022";
+        public const string PROGRAM_DATE = "April 13, 2022";
 
         [Option("Input", "I", ArgPosition = 1, HelpShowsDefault = false, IsInputFilePath = true,
             HelpText = "SQL script file to process")]
@@ -37,7 +37,7 @@ namespace PgSqlViewCreatorHelper
 
         [Option("Verbose", "V", HelpShowsDefault = true,
             HelpText = "When true, display the old and new version of each updated line")]
-        public bool VerboseOutput { get; set; } = true;
+        public bool VerboseOutput { get; set; }
 
         /// <summary>
         /// Constructor
