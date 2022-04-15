@@ -205,10 +205,18 @@ namespace TableColumnNameMapContainer
                         columnNameMap.Add(newTableName, targetTableColumnMap);
                     }
 
-                    if (targetTableColumnMap.ContainsKey(sourceColumnName))
+                    if (targetTableColumnMap.TryGetValue(sourceColumnName, out var existingReplacer))
                     {
-                        // The column rename map has already been defined; this is OK
-                        OnDebugEvent("Column mapping already defined for {0} in table {1}", sourceColumnName, sourceTableName);
+                        // The column rename map has already been defined
+                        // Show a warning if the new column names differ
+
+                        if (!existingReplacer.ReplacementText.Equals(newColumnName))
+                        {
+                            OnWarningEvent(
+                                "Column mapping already defined for {0} in table {1}; differing new column names: {2} vs. {3}",
+                                sourceColumnName, sourceTableName, existingReplacer.ReplacementText, newColumnName);
+                        }
+
                         continue;
                     }
 
