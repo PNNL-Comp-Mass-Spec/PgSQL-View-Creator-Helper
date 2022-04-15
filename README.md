@@ -14,8 +14,9 @@ PgSqlViewCreatorHelper is a console application, and must be run from the Window
 ```
 PgSqlViewCreatorHelper.exe
   /I:InputFilePath
-  /Map:MapFilePath
-  [/Map2:SecondaryMapFilePath]
+  /Map:ColumnNameMapFile
+  [/Map2:SecondaryColumnMapFile]
+  [/TableNameMap:TableNameMapFile]
   [/Schema:DefaultSchemaName]
   [/V]
   [/ParamFile:ParamFileName.conf] [/CreateParamFile]
@@ -109,6 +110,21 @@ Use `/Map2` to optionally specify a secondary map file, which is a tab-delimited
 | T_Mgrs                  | M_ParmValueChanged   | param_value_changed  |
 | T_Mgrs                  | M_ControlFromWebsite | control_from_website |
 | T_Mgrs                  | M_Comment            | comment              |
+
+
+Use `/TableNameMap` (or `/TableNames`) to optionally specify a tab-delimited text file listing old and new names for renamed tables
+* The Table Name Map file matches the file defined for the `DataTables` parameter when using the DB Schema Export Tool (https://github.com/PNNL-Comp-Mass-Spec/DB-Schema-Export-Tool) to pre-process an existing DDL file
+  * The text file must include columns `SourceTableName` and `TargetTableName`
+* Example data (showing additional columns that are used by the DB Schema Export Tool, but are ignored by this program)
+
+| SourceTableName        | TargetSchemaName | TargetTableName       | PgInsert  | KeyColumn(s)      |
+|------------------------|------------------|-----------------------|-----------|-------------------|
+| T_Analysis_State_Name  | public           | t_analysis_job_state  | true      | job_state_id      |
+| T_DatasetRatingName    | public           | t_dataset_rating_name | true      | dataset_rating_id |
+| T_Log_Entries          | public           | t_log_entries         | false     |                   |
+| T_Job_Events           | cap              | t_job_Events          | false     |                   |
+| T_Job_State_Name       | cap              | t_job_state_name      | true      | job               |
+| T_Users                | public           | t_users               | true      | user_id           |
 
 
 Use `/Schema` to specify a default schema name to add before all table names (that don't already have a schema name prefix)
