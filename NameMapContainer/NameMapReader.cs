@@ -130,11 +130,13 @@ namespace TableColumnNameMapContainer
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
         /// names should not have double quotes around them
         /// </param>
+        /// <param name="tableNameMapSynonyms">Dictionary mapping original table names to new table names</param>
         /// <returns>True if successful, false if an error</returns>
         public bool LoadTableColumnMapFile(
             FileSystemInfo mapFile,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
-            IDictionary<string, Dictionary<string, WordReplacer>> columnNameMap)
+            IDictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
+            IReadOnlyDictionary<string, string> tableNameMapSynonyms)
         {
             var linesRead = 0;
 
@@ -169,8 +171,20 @@ namespace TableColumnNameMapContainer
                     var sourceColumnName = lineParts[1];
                     var newColumnName = PossiblyUnquote(lineParts[2]);
 
+                    string sourceTableNameToUse;
+
+                    if (tableNameMap.ContainsKey(sourceTableName) ||
+                        !tableNameMapSynonyms.TryGetValue(sourceTableName, out var alternateTableName))
+                    {
+                        sourceTableNameToUse = sourceTableName;
+                    }
+                    else
+                    {
+                        sourceTableNameToUse = alternateTableName;
+                    }
+
                     // Look for the table in tableNameMap
-                    if (!tableNameMap.TryGetValue(sourceTableName, out var replacer))
+                    if (!tableNameMap.TryGetValue(sourceTableNameToUse, out var replacer))
                     {
                         if (missingTablesWarned.Contains(sourceTableName))
                             continue;
@@ -206,7 +220,7 @@ namespace TableColumnNameMapContainer
             }
             catch (Exception ex)
             {
-                OnErrorEvent(string.Format("Error in LoadSecondaryMapFile, reading line {0}", linesRead), ex);
+                OnErrorEvent(string.Format("Error in LoadTableColumnMapFile, reading line {0}", linesRead), ex);
                 return false;
             }
         }

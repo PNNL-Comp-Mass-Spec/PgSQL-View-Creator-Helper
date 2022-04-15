@@ -31,6 +31,13 @@ namespace PgSqlViewCreatorHelper
                        "SourceTableName  SourceColumnName  TargetColumnName")]
         public string ColumnNameMapFile2 { get; set; }
 
+        [Option("TableNameMap", "TableNames", HelpShowsDefault = false, IsInputFilePath = true,
+            HelpText = "Text file with table names (one name per line) used to track renamed tables\n" +
+                       "(typically sent to DB_Schema_Export_Tool.exe via the DataTables parameter when using the ExistingDDL option " +
+                       "to pre-process a DDL file prior to calling sqlserver2pgsql.pl)\n" +
+                       "Tab-delimited file that must include columns SourceTableName and TargetTableName")]
+        public string TableNameMapFile { get; set; }
+
         [Option("DefaultSchema", "Schema", HelpShowsDefault = false,
             HelpText = "Schema to prefix table names with (when the name does not have a schema)")]
         public string DefaultSchema { get; set; }
@@ -47,6 +54,7 @@ namespace PgSqlViewCreatorHelper
             InputScriptFile = string.Empty;
             ColumnNameMapFile = string.Empty;
             ColumnNameMapFile2 = string.Empty;
+            TableNameMapFile = string.Empty;
             DefaultSchema = string.Empty;
         }
 
@@ -71,6 +79,11 @@ namespace PgSqlViewCreatorHelper
             if (!string.IsNullOrWhiteSpace(ColumnNameMapFile2))
             {
                 Console.WriteLine(" {0,-35} {1}", "Secondary column name map file:", PathUtils.CompactPathString(ColumnNameMapFile2, 80));
+            }
+
+            if (!string.IsNullOrWhiteSpace(TableNameMapFile))
+            {
+                Console.WriteLine(" {0,-35} {1}", "Table name map file:", PathUtils.CompactPathString(TableNameMapFile, 80));
             }
 
             Console.WriteLine(" {0,-35} {1}", "Default schema name:",

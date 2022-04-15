@@ -174,6 +174,37 @@ namespace PgSqlViewCreatorHelper
                 if (!columnMapFileLoaded)
                     return false;
 
+                var tableNameMapSynonyms = new Dictionary<string, string>();
+
+                if (!string.IsNullOrWhiteSpace(mOptions.TableNameMapFile))
+                {
+                    var tableNameMapFile = new FileInfo(mOptions.TableNameMapFile);
+                    if (!tableNameMapFile.Exists)
+                    {
+                        OnErrorEvent("Table name map file not found: " + tableNameMapFile.FullName);
+                        return false;
+                    }
+
+                    var tableNameMapReader = new TableNameMapContainer.NameMapReader();
+                    RegisterEvents(tableNameMapReader);
+
+                    var tableNameInfo = tableNameMapReader.LoadTableNameMapFile(tableNameMapFile.FullName, true, out var abortProcessing);
+
+                    if (abortProcessing)
+                    {
+                        return false;
+                    }
+
+                    // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+                    foreach (var item in tableNameInfo)
+                    {
+                        if (tableNameMapSynonyms.ContainsKey(item.SourceTableName) || string.IsNullOrWhiteSpace(item.TargetTableName))
+                            continue;
+
+                        tableNameMapSynonyms.Add(item.SourceTableName, item.TargetTableName);
+                    }
+                }
+
                 if (!string.IsNullOrWhiteSpace(mOptions.ColumnNameMapFile2))
                 {
                     var columnMapFile2 = new FileInfo(mOptions.ColumnNameMapFile2);
