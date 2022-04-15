@@ -10,7 +10,7 @@ namespace PgSqlViewCreatorHelper
 {
     public class ViewCreatorHelper : EventNotifier
     {
-        // Ignore Spelling: dms, dpkg, mc, ont, sw
+        // Ignore Spelling: dbo, dms, dpkg, mc, ont, sw
 
         private readonly ViewCreatorHelperOptions mOptions;
 
