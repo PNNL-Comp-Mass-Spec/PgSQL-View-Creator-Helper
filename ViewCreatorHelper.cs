@@ -51,7 +51,7 @@ namespace PgSqlViewCreatorHelper
         /// Create a merged column name map file
         /// </summary>
         /// <param name="inputDirectory"></param>
-        /// <param name="mapFile">Source Column name map file</param>
+        /// <param name="columnMapFile">Source Column name map file</param>
         /// <param name="tableNameMap">
         /// Dictionary where keys are the original (source) table names
         /// and values are WordReplacer classes that track the new table names and new column names in PostgreSQL
@@ -63,7 +63,7 @@ namespace PgSqlViewCreatorHelper
         /// </param>
         private void CreateMergedColumnNameMapFile(
             FileSystemInfo inputDirectory,
-            FileSystemInfo mapFile,
+            FileSystemInfo columnMapFile,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
             IReadOnlyDictionary<string, Dictionary<string, WordReplacer>> columnNameMap)
         {
@@ -74,7 +74,7 @@ namespace PgSqlViewCreatorHelper
                     return;
                 }
 
-                var mergedFileName = Path.GetFileNameWithoutExtension(mapFile.Name) + "_merged" + mapFile.Extension;
+                var mergedFileName = Path.GetFileNameWithoutExtension(columnMapFile.Name) + "_merged" + columnMapFile.Extension;
                 var outputFilePath = Path.Combine(inputDirectory.FullName, mergedFileName);
 
                 OnStatusEvent("Creating " + outputFilePath);
@@ -154,36 +154,36 @@ namespace PgSqlViewCreatorHelper
                     inputFile.DirectoryName,
                     Path.GetFileNameWithoutExtension(inputFile.Name) + "_updated" + inputFile.Extension);
 
-                var mapFile = new FileInfo(mOptions.ColumnNameMapFile);
-                if (!mapFile.Exists)
+                var columnMapFile = new FileInfo(mOptions.ColumnNameMapFile);
+                if (!columnMapFile.Exists)
                 {
-                    OnErrorEvent("Column name map file not found: " + mapFile.FullName);
+                    OnErrorEvent("Column name map file not found: " + columnMapFile.FullName);
                     return false;
                 }
 
                 var mapReader = new NameMapReader();
                 RegisterEvents(mapReader);
 
-                var mapFileLoaded = mapReader.LoadSqlServerToPgSqlColumnMapFile(
-                    mapFile,
+                var columnMapFileLoaded = mapReader.LoadSqlServerToPgSqlColumnMapFile(
+                    columnMapFile,
                     mOptions.DefaultSchema,
                     true,
                     out var tableNameMap,
                     out var columnNameMap);
 
-                if (!mapFileLoaded)
+                if (!columnMapFileLoaded)
                     return false;
 
                 if (!string.IsNullOrWhiteSpace(mOptions.ColumnNameMapFile2))
                 {
-                    var mapFile2 = new FileInfo(mOptions.ColumnNameMapFile2);
-                    if (!mapFile2.Exists)
+                    var columnMapFile2 = new FileInfo(mOptions.ColumnNameMapFile2);
+                    if (!columnMapFile2.Exists)
                     {
-                        OnErrorEvent("Secondary column name map file not found: " + mapFile2.FullName);
+                        OnErrorEvent("Secondary column name map file not found: " + columnMapFile2.FullName);
                         return false;
                     }
 
-                    var secondaryMapFileLoaded = mapReader.LoadTableColumnMapFile(mapFile2, tableNameMap, columnNameMap);
+                    var secondaryMapFileLoaded = mapReader.LoadTableColumnMapFile(columnMapFile2, tableNameMap, columnNameMap, tableNameMapSynonyms);
 
                     if (!secondaryMapFileLoaded)
                         return false;
@@ -297,7 +297,7 @@ namespace PgSqlViewCreatorHelper
                     }
                 }
 
-                CreateMergedColumnNameMapFile(inputFile.Directory, mapFile, tableNameMap, columnNameMap);
+                CreateMergedColumnNameMapFile(inputFile.Directory, columnMapFile, tableNameMap, columnNameMap);
 
                 return true;
             }

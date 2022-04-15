@@ -13,7 +13,7 @@ namespace TableColumnNameMapContainer
         /// It is a tab-delimited file with five columns:
         /// SourceTable  SourceName  Schema  NewTable  NewName
         /// </summary>
-        /// <param name="mapFile">Tab-delimited text file to read</param>
+        /// <param name="columnMap">Tab-delimited text file to read</param>
         /// <param name="defaultSchema">Default schema name</param>
         /// <param name="warnDuplicateTargetColumnNames">
         /// If true, warn the user at the console if multiple columns in a table have the same target column name
@@ -29,7 +29,7 @@ namespace TableColumnNameMapContainer
         /// </param>
         /// <returns>True if successful, false if an error</returns>
         public bool LoadSqlServerToPgSqlColumnMapFile(
-            FileSystemInfo mapFile,
+            FileSystemInfo columnMap,
             string defaultSchema,
             bool warnDuplicateTargetColumnNames,
             out Dictionary<string, WordReplacer> tableNameMap,
@@ -42,7 +42,7 @@ namespace TableColumnNameMapContainer
 
             try
             {
-                using var reader = new StreamReader(new FileStream(mapFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                using var reader = new StreamReader(new FileStream(columnMap.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
 
                 while (!reader.EndOfStream)
                 {
@@ -89,7 +89,7 @@ namespace TableColumnNameMapContainer
                     {
                         OnWarningEvent(
                             "In file {0}, table {1} has multiple columns with the same source name, {2}",
-                            mapFile.Name, newTableName, sourceColumnName);
+                            columnMap.Name, newTableName, sourceColumnName);
 
                         continue;
                     }
@@ -99,7 +99,7 @@ namespace TableColumnNameMapContainer
                     {
                         OnWarningEvent(
                             "In file {0}, table {1} has multiple columns with the same new name, {2}",
-                            mapFile.Name, newTableName, newColumnName);
+                            columnMap.Name, newTableName, newColumnName);
                     }
 
                     var columnNameReplacer = new WordReplacer(sourceColumnName, newColumnName);
@@ -116,8 +116,8 @@ namespace TableColumnNameMapContainer
         }
 
         /// <summary>
-        /// Read a three column name map file, which is typically sent to DB_Schema_Export_Tool.exe via the ColumnMap parameter when using the ExistingDDL option
-        /// It is a tab-delimited file with three columns:
+        /// Read a tab-delimited name map file, which is typically sent to DB_Schema_Export_Tool.exe via the ColumnMap parameter when using the ExistingDDL option
+        /// It should have three columns:
         /// SourceTableName  SourceColumnName  TargetColumnName
         /// </summary>
         /// <param name="mapFile">Tab-delimited text file to read</param>
