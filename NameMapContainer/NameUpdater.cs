@@ -77,17 +77,14 @@ namespace TableColumnNameMapContainer
 
             foreach (var updatedTableName in referencedTables)
             {
-                foreach (var item in columnNameMap)
-                {
-                    if (!item.Key.Equals(updatedTableName))
-                        continue;
+                if (!columnNameMap.TryGetValue(updatedTableName, out var nameMapping))
+                    continue;
 
-                    foreach (var columnNameMatcher in item.Value)
+                foreach (var columnNameMatcher in nameMapping)
+                {
+                    if (columnNameMatcher.Value.ProcessLine(workingCopy, updateSchema, out var updatedLine))
                     {
-                        if (columnNameMatcher.Value.ProcessLine(workingCopy, updateSchema, out var updatedLine))
-                        {
-                            workingCopy = updatedLine;
-                        }
+                        workingCopy = updatedLine;
                     }
                 }
             }
