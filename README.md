@@ -1,11 +1,16 @@
 # PgSQL View Creator Helper
 
-This program processes a SQL DDL file with CREATE VIEW commands and renames the
+This program processes a SQL DDL file with `CREATE VIEW` commands and renames the
 column and table names referenced by the views to use new names defined in a
 mapping file (or files).
 
 In addition, it creates a new `ColumnNameMap_merged.txt` file that merges the contents of the `/Map` and `/Map2` files
 * The five columns in the merged file are the same as in the `/Map` file
+
+See also the companion PgSQL Table Creator Helper program, which processes the `DBName_after.sql` file created by Perl script `sqlserver2pgsql.pl`
+* https://github.com/PNNL-Comp-Mass-Spec/PgSQL-Table-Creator-Helper
+* In contrast, the PgSQL View Creator Helper processes the `DBName_unsure.sql` file created by Perl script `sqlserver2pgsql.pl`
+
 
 ## Console Switches
 
@@ -23,7 +28,7 @@ PgSqlViewCreatorHelper.exe
 ```
 
 The input file should be a SQL text file with CREATE VIEW statements
-* The program is primarily designed to update the DBName_unsure.sql file created by Perl script sqlserver2pgsql.pl (https://github.com/PNNL-Comp-Mass-Spec/sqlserver2pgsql) 
+* The program is primarily designed to update the `DBName_unsure.sql` file created by Perl script `sqlserver2pgsql.pl` (https://github.com/PNNL-Comp-Mass-Spec/sqlserver2pgsql) 
 * Example input file statements:
 
 ```PLpgSQL
