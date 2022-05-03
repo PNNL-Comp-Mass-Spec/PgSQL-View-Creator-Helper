@@ -124,6 +124,68 @@ namespace PgSqlViewCreatorHelper
             }
         }
 
+        private bool LoadNameMapFiles(
+            FileSystemInfo columnMapFile,
+            out Dictionary<string, WordReplacer> tableNameMap,
+            out Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap)
+        {
+            var mapReader = new NameMapReader();
+            RegisterEvents(mapReader);
+
+            var columnMapFileLoaded = mapReader.LoadSqlServerToPgSqlColumnMapFile(
+                columnMapFile,
+                mOptions.DefaultSchema,
+                true,
+                out tableNameMap,
+                out columnNameMap);
+
+            if (!columnMapFileLoaded)
+                return false;
+
+            var tableNameMapSynonyms = new Dictionary<string, string>();
+
+            if (!string.IsNullOrWhiteSpace(mOptions.TableNameMapFile))
+            {
+                var tableNameMapFile = new FileInfo(mOptions.TableNameMapFile);
+                if (!tableNameMapFile.Exists)
+                {
+                    OnErrorEvent("Table name map file not found: " + tableNameMapFile.FullName);
+                    return false;
+                }
+
+                var tableNameMapReader = new TableNameMapContainer.NameMapReader();
+                RegisterEvents(tableNameMapReader);
+
+                var tableNameInfo = tableNameMapReader.LoadTableNameMapFile(tableNameMapFile.FullName, true, out var abortProcessing);
+
+                if (abortProcessing)
+                {
+                    return false;
+                }
+
+                // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+                foreach (var item in tableNameInfo)
+                {
+                    if (tableNameMapSynonyms.ContainsKey(item.SourceTableName) || string.IsNullOrWhiteSpace(item.TargetTableName))
+                        continue;
+
+                    tableNameMapSynonyms.Add(item.SourceTableName, item.TargetTableName);
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(mOptions.ColumnNameMapFile2))
+                return true;
+
+            var columnMapFile2 = new FileInfo(mOptions.ColumnNameMapFile2);
+            if (!columnMapFile2.Exists)
+            {
+                OnErrorEvent("Secondary column name map file not found: " + columnMapFile2.FullName);
+                return false;
+            }
+
+            return mapReader.LoadTableColumnMapFile(columnMapFile2, tableNameMap, columnNameMap, tableNameMapSynonyms);
+        }
+
         /// <summary>
         /// Process the input file
         /// </summary>
@@ -161,64 +223,8 @@ namespace PgSqlViewCreatorHelper
                     return false;
                 }
 
-                var mapReader = new NameMapReader();
-                RegisterEvents(mapReader);
-
-                var columnMapFileLoaded = mapReader.LoadSqlServerToPgSqlColumnMapFile(
-                    columnMapFile,
-                    mOptions.DefaultSchema,
-                    true,
-                    out var tableNameMap,
-                    out var columnNameMap);
-
-                if (!columnMapFileLoaded)
+                if (!LoadNameMapFiles(columnMapFile, out var tableNameMap, out var columnNameMap))
                     return false;
-
-                var tableNameMapSynonyms = new Dictionary<string, string>();
-
-                if (!string.IsNullOrWhiteSpace(mOptions.TableNameMapFile))
-                {
-                    var tableNameMapFile = new FileInfo(mOptions.TableNameMapFile);
-                    if (!tableNameMapFile.Exists)
-                    {
-                        OnErrorEvent("Table name map file not found: " + tableNameMapFile.FullName);
-                        return false;
-                    }
-
-                    var tableNameMapReader = new TableNameMapContainer.NameMapReader();
-                    RegisterEvents(tableNameMapReader);
-
-                    var tableNameInfo = tableNameMapReader.LoadTableNameMapFile(tableNameMapFile.FullName, true, out var abortProcessing);
-
-                    if (abortProcessing)
-                    {
-                        return false;
-                    }
-
-                    // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
-                    foreach (var item in tableNameInfo)
-                    {
-                        if (tableNameMapSynonyms.ContainsKey(item.SourceTableName) || string.IsNullOrWhiteSpace(item.TargetTableName))
-                            continue;
-
-                        tableNameMapSynonyms.Add(item.SourceTableName, item.TargetTableName);
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(mOptions.ColumnNameMapFile2))
-                {
-                    var columnMapFile2 = new FileInfo(mOptions.ColumnNameMapFile2);
-                    if (!columnMapFile2.Exists)
-                    {
-                        OnErrorEvent("Secondary column name map file not found: " + columnMapFile2.FullName);
-                        return false;
-                    }
-
-                    var secondaryMapFileLoaded = mapReader.LoadTableColumnMapFile(columnMapFile2, tableNameMap, columnNameMap, tableNameMapSynonyms);
-
-                    if (!secondaryMapFileLoaded)
-                        return false;
-                }
 
                 var matchedViews = new List<string>();
 
