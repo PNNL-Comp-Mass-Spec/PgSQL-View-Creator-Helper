@@ -13,7 +13,7 @@ namespace TableColumnNameMapContainer
         /// It is a tab-delimited file with five columns:
         /// SourceTable  SourceName  Schema  NewTable  NewName
         /// </summary>
-        /// <param name="columnMap">Tab-delimited text file to read</param>
+        /// <param name="columnMapFile">Tab-delimited text file to read</param>
         /// <param name="defaultSchema">Default schema name</param>
         /// <param name="warnDuplicateTargetColumnNames">
         /// If true, warn the user at the console if multiple columns in a table have the same target column name
@@ -29,7 +29,7 @@ namespace TableColumnNameMapContainer
         /// </param>
         /// <returns>True if successful, false if an error</returns>
         public bool LoadSqlServerToPgSqlColumnMapFile(
-            FileSystemInfo columnMap,
+            FileSystemInfo columnMapFile,
             string defaultSchema,
             bool warnDuplicateTargetColumnNames,
             out Dictionary<string, WordReplacer> tableNameMap,
@@ -42,7 +42,7 @@ namespace TableColumnNameMapContainer
 
             try
             {
-                using var reader = new StreamReader(new FileStream(columnMap.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+                using var reader = new StreamReader(new FileStream(columnMapFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
 
                 while (!reader.EndOfStream)
                 {
@@ -89,7 +89,7 @@ namespace TableColumnNameMapContainer
                     {
                         OnWarningEvent(
                             "In file {0}, table {1} has multiple columns with the same source name, {2}",
-                            columnMap.Name, newTableName, sourceColumnName);
+                            columnMapFile.Name, newTableName, sourceColumnName);
 
                         continue;
                     }
@@ -99,7 +99,7 @@ namespace TableColumnNameMapContainer
                     {
                         OnWarningEvent(
                             "In file {0}, table {1} has multiple columns with the same new name, {2}",
-                            columnMap.Name, newTableName, newColumnName);
+                            columnMapFile.Name, newTableName, newColumnName);
                     }
 
                     var columnNameReplacer = new WordReplacer(sourceColumnName, newColumnName);
