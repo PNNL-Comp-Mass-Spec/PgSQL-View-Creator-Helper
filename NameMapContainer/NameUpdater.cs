@@ -82,10 +82,22 @@ namespace TableColumnNameMapContainer
 
                 foreach (var columnNameMatcher in nameMapping)
                 {
-                    if (columnNameMatcher.Value.ProcessLine(workingCopy, updateSchema, out var updatedLine))
+                    if (!columnNameMatcher.Value.ProcessLine(workingCopy, updateSchema, out var updatedLine))
+                        continue;
+
+                    if (updatedLine.Contains(TableNameMapContainer.NameMapReader.SKIP_FLAG))
                     {
-                        workingCopy = updatedLine;
+                        // The data line contains a skipped column (meaning the column does not exist in the target database)
+                        // Change the line to a SQL comment
+
+                        var leadingWhitespaceMatcher = new Regex("^[\t ]+", RegexOptions.Compiled);
+                        var match = leadingWhitespaceMatcher.Match(workingCopy);
+
+                        workingCopy = string.Format("{0}-- Remove or update since skipped column: {1}", match.Success ? match.Value : "    ", workingCopy.Trim());
+                        break;
                     }
+
+                    workingCopy = updatedLine;
                 }
             }
 
