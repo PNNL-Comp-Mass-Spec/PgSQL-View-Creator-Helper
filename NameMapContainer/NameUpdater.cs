@@ -57,7 +57,7 @@ namespace TableColumnNameMapContainer
         }
 
         /// <summary>
-        ///Update column names in dictionary columnNameMap
+        /// Update column names in dictionary columnNameMap
         /// </summary>
         /// <param name="columnNameMap">
         /// Dictionary where keys are new table names
@@ -78,7 +78,10 @@ namespace TableColumnNameMapContainer
             foreach (var updatedTableName in referencedTables)
             {
                 if (!columnNameMap.TryGetValue(updatedTableName, out var nameMapping))
+                {
+                    // Column not found; this will happen if the ColumnNameMapFile does not contain every column in the target database
                     continue;
+                }
 
                 foreach (var columnNameMatcher in nameMapping)
                 {
