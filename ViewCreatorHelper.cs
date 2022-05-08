@@ -307,7 +307,47 @@ namespace PgSqlViewCreatorHelper
                 return false;
             }
 
-            return mapReader.LoadTableColumnMapFile(columnMapFile2, tableNameMap, columnNameMap, tableNameMapSynonyms);
+            var secondaryMapFileLoaded = mapReader.LoadTableColumnMapFile(columnMapFile2, tableNameMap, columnNameMap, tableNameMapSynonyms);
+
+            if (!secondaryMapFileLoaded)
+                return false;
+
+            // When Perl script sqlserver2pgsql.pl writes out CREATE INDEX lines, the include columns are converted to snake case but are not renamed
+            // To account for this, step through the tables and columns in columnNameMap and add snake case mappings
+            foreach (var tableItem in columnNameMap)
+            {
+                var currentTable = tableItem.Key;
+
+                var columnsToAdd = new Dictionary<string, WordReplacer>();
+
+                foreach (var columnItem in tableItem.Value)
+                {
+                    var updatedColumnName = ConvertNameToSnakeCase(columnItem.Key);
+
+                    if (updatedColumnName.Equals(columnItem.Key, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (updatedColumnName.Equals(columnItem.Value.ReplacementText))
+                        continue;
+
+                    columnsToAdd.Add(updatedColumnName,
+                        new WordReplacer(updatedColumnName, columnItem.Value.ReplacementText, columnItem.Value.DefaultSchema));
+                }
+
+                foreach (var newColumn in columnsToAdd)
+                {
+                    if (!tableItem.Value.ContainsKey(newColumn.Key))
+                    {
+                        tableItem.Value.Add(newColumn.Key, newColumn.Value);
+                    }
+                    else
+                    {
+                        OnDebugEvent("Table {0} already has the mapping {1} -> {2}", currentTable, newColumn.Key, newColumn.Value);
+                    }
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
