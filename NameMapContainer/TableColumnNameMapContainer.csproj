@@ -48,6 +48,7 @@
     <Compile Include="NameMapReader.cs" />
     <Compile Include="NameUpdater.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RenamedColumnInfo.cs" />
     <Compile Include="WordReplacer.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -82,6 +82,26 @@ namespace PgSqlViewCreatorHelper
             writer.WriteLine();
         }
 
+        private void AppendRenamedColumns(
+            ICollection<RenamedColumnInfo> renamedColumnsInView,
+            List<KeyValuePair<string, string>> renamedColumnAliasesInView,
+            bool isColumnAliases)
+        {
+            // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+            foreach (var renamedColumn in renamedColumnAliasesInView)
+            {
+                if (renamedColumn.Key.Equals(renamedColumn.Value))
+                    continue;
+
+                if (!mOptions.IncludeCaseChangeInRenamedColumnMapFile &&
+                    renamedColumn.Key.Equals(renamedColumn.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                renamedColumnsInView.Add(new RenamedColumnInfo(renamedColumn.Key, renamedColumn.Value, isColumnAliases));
+            }
+        }
 
         /// <summary>
         /// Convert a column alias to snake_case, including replacing / removing symbols
@@ -256,6 +276,15 @@ namespace PgSqlViewCreatorHelper
             var mapReader = new NameMapReader();
             RegisterEvents(mapReader);
 
+            // In dictionary tableNameMap, keys are the original (source) table names
+            // and values are WordReplacer classes that track the new table names and new column names in PostgreSQL
+
+            // In dictionary columnNameMap, keys are new table names
+            // and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
+            // names should not have double quotes around them
+
+            // Dictionary tableNameMapSynonyms mas original table names to new table names
+
             var columnMapFileLoaded = mapReader.LoadSqlServerToPgSqlColumnMapFile(
                 columnMapFile,
                 mOptions.DefaultSchema,
@@ -396,6 +425,12 @@ namespace PgSqlViewCreatorHelper
 
                 var matchedViews = new List<string>();
 
+                var referencedTables = new SortedSet<string>();
+
+                // Keys in this dictionary are view names
+                // Values are the list of updated column names (or column aliases)
+                var updatedColumnNamesAndAliases = new Dictionary<string, List<RenamedColumnInfo>>();
+
                 using (var reader = new StreamReader(new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (var writer = new StreamWriter(new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read)))
                 {
@@ -430,7 +465,7 @@ namespace PgSqlViewCreatorHelper
 
                             if (cachedLines.Count > 0)
                             {
-                                var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews);
+                                var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews, updatedColumnNamesAndAliases);
                                 if (!success)
                                     return false;
 
@@ -522,7 +557,7 @@ namespace PgSqlViewCreatorHelper
 
                     if (cachedLines.Count > 0)
                     {
-                        var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews);
+                        var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews, updatedColumnNamesAndAliases);
                         if (!success)
                             return false;
 
@@ -535,6 +570,7 @@ namespace PgSqlViewCreatorHelper
                     {
                         writer.WriteLine("SELECT * FROM {0};", viewName);
                     }
+
                 }
 
                 CreateMergedColumnNameMapFile(inputFile.Directory, columnMapFile, tableNameMap, columnNameMap);
@@ -564,12 +600,16 @@ namespace PgSqlViewCreatorHelper
         /// </param>
         /// <param name="writer"></param>
         /// <param name="matchedViews">List of matched view names</param>
+        /// <param name="updatedColumnNamesAndAliases">
+        /// Dictionary where keys are view names and values are the list of updated column names (or column aliases)
+        /// </param>
         private bool ProcessCachedLines(
             List<string> cachedLines,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             TextWriter writer,
-            ICollection<string> matchedViews)
+            ICollection<string> matchedViews,
+            IDictionary<string, List<RenamedColumnInfo>> updatedColumnNamesAndAliases)
         {
             // Keys in this list are the original version of the line
             // Values are the updated version
@@ -597,6 +637,7 @@ namespace PgSqlViewCreatorHelper
                     break;
                 }
 
+                // ReSharper disable once InvertIf
                 if (dataLine.IndexOf("outer apply", StringComparison.OrdinalIgnoreCase) > 0)
                 {
                     writer.WriteLine("-- This view uses OUTER APPLY, which is not supported by PostgreSQL");
@@ -635,6 +676,9 @@ namespace PgSqlViewCreatorHelper
                 updatedLines.Add(new KeyValuePair<string, string>(dataLine, updatedLine));
             }
 
+            var fromTableFound = false;
+            var renamedColumnsInView = new List<RenamedColumnInfo>();
+
             // Look for column names in updatedLines, updating as appropriate
             // Also look for comments
             foreach (var dataLine in updatedLines)
@@ -666,7 +710,7 @@ namespace PgSqlViewCreatorHelper
                     viewComments.Add(commentText.Replace('\'', '"'));
                 }
 
-                var workingCopy = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, dataLine.Value, true);
+                var workingCopy = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, dataLine.Value, true, out var renamedColumns);
 
                 // Use || for string concatenation, instead of +
                 if (stringConcatenationMatcher1.IsMatch(workingCopy))
@@ -688,12 +732,32 @@ namespace PgSqlViewCreatorHelper
 
                 workingCopy = workingCopy.TrimEnd().TrimEnd('\t').TrimEnd();
 
+                if (workingCopy.Trim().StartsWith("FROM", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Found the FROM keyword; stop looking for column name aliases in this view
+                    fromTableFound = true;
+                }
+
+                bool storedRenamedColumnAlias;
 
                 if (mOptions.SnakeCaseColumnAliases && !fromTableFound)
                 {
                     workingCopy = SnakeCaseColumnAliases(workingCopy, out var renamedColumnAliasesInView);
 
+                    storedRenamedColumnAlias = renamedColumnAliasesInView.Count > 0;
+
+                    AppendRenamedColumns(renamedColumnsInView, renamedColumnAliasesInView, true);
                 }
+                else
+                {
+                    storedRenamedColumnAlias = false;
+                }
+
+                if (!storedRenamedColumnAlias)
+                {
+                    AppendRenamedColumns(renamedColumnsInView, renamedColumns, false);
+                }
+
                 if (originalLine.Equals(workingCopy))
                 {
                     writer.WriteLine(originalLine);
@@ -706,6 +770,23 @@ namespace PgSqlViewCreatorHelper
                 }
 
                 writer.WriteLine(workingCopy);
+            }
+
+            if (viewNames.Count > 0)
+            {
+                List<RenamedColumnInfo> renamedColumnList;
+
+                if (updatedColumnNamesAndAliases.TryGetValue(viewNames[0], out var existingRenamedColumnList))
+                {
+                    renamedColumnList = existingRenamedColumnList;
+                }
+                else
+                {
+                    renamedColumnList = new List<RenamedColumnInfo>();
+                    updatedColumnNamesAndAliases.Add(viewNames[0], renamedColumnList);
+                }
+
+                renamedColumnList.AddRange(renamedColumnsInView);
             }
 
             if (viewComments.Count == 0)

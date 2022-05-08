@@ -73,19 +73,46 @@ namespace TableColumnNameMapContainer
             string dataLine,
             bool updateSchema)
         {
+            return UpdateColumnNames(columnNameMap, referencedTables, dataLine, updateSchema, out _);
+        }
+
+        /// <summary>
+        /// Update column names in dictionary columnNameMap
+        /// </summary>
+        /// <param name="columnNameMap">
+        /// Dictionary where keys are new table names
+        /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
+        /// names should not have double quotes around them
+        /// </param>
+        /// <param name="referencedTables">Table names found in the region that contains the data line (using new table names, not the source table name)</param>
+        /// <param name="dataLine">Text to examine</param>
+        /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
+        /// <param name="renamedColumns">List of renamed columns</param>
+        public static string UpdateColumnNames(
+            Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
+            SortedSet<string> referencedTables,
+            string dataLine,
+            bool updateSchema,
+            out List<KeyValuePair<string, string>> renamedColumns)
+        {
+            renamedColumns = new List<KeyValuePair<string, string>>();
+
             var workingCopy = string.Copy(dataLine);
 
             foreach (var updatedTableName in referencedTables)
             {
                 if (!columnNameMap.TryGetValue(updatedTableName, out var nameMapping))
                 {
-                    // Column not found; this will happen if the ColumnNameMapFile does not contain every column in the target database
+                    // Table not found; this will happen if the ColumnNameMapFile does not contain every table in the target database
                     continue;
                 }
 
+                // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
                 foreach (var columnNameMatcher in nameMapping)
                 {
-                    if (!columnNameMatcher.Value.ProcessLine(workingCopy, updateSchema, out var updatedLine))
+                    var wordReplacer = columnNameMatcher.Value;
+
+                    if (!wordReplacer.ProcessLine(workingCopy, updateSchema, out var updatedLine))
                         continue;
 
                     if (updatedLine.Contains(TableNameMapContainer.NameMapReader.SKIP_FLAG))
@@ -99,6 +126,8 @@ namespace TableColumnNameMapContainer
                         workingCopy = string.Format("{0}-- Remove or update since skipped column: {1}", match.Success ? match.Value : "    ", workingCopy.Trim());
                         break;
                     }
+
+                    renamedColumns.Add(new KeyValuePair<string, string>(wordReplacer.TextToFind, wordReplacer.ReplacementText));
 
                     workingCopy = updatedLine;
                 }
