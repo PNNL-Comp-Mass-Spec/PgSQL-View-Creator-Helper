@@ -199,6 +199,10 @@ namespace PgSqlViewCreatorHelper
                 var unmatchedStartingBracketMatcher = new Regex(@"(?<FieldName>[( ][a-z_]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
                 var unmatchedEndingBracketMatcher = new Regex(@"\[(?<FieldName>[a-z_]+[, ])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+                var addCheckConstraintMatcher = new Regex(@"\s*ALTER TABLE(?<TableName>.+?)ADD CONSTRAINT(?<ConstraintName>.+?)CHECK(?<CheckExpression>.+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+                var setDefaultMatcher = new Regex(@"\s*ALTER TABLE(?<TableName>.+?)ALTER COLUMN(?<ConstraintName>.+?)SET DEFAULT(?<DefaultValue>.+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
                 var inputFile = new FileInfo(mOptions.InputScriptFile);
                 if (!inputFile.Exists)
                 {
@@ -308,6 +312,41 @@ namespace PgSqlViewCreatorHelper
                                 {
                                     break;
                                 }
+                            }
+
+                            var checkConstraintMatch = addCheckConstraintMatcher.Match(updatedLine);
+
+                            var setDefaultMatch = setDefaultMatcher.Match(updatedLine);
+
+                            if (checkConstraintMatch.Success)
+                            {
+                                var tableName = GetNameWithoutSchema(checkConstraintMatch.Groups["TableName"].Value.Trim()).Trim('"');
+                                referencedTables.Clear();
+                                referencedTables.Add(tableName);
+
+                                updatedLine = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, updatedLine, false);
+
+                                if (updatedLine.Contains("udf_whitespace_chars"))
+                                {
+                                    // Use the new function name and compare to false instead of 0
+                                    updatedLine = updatedLine.Replace("udf_whitespace_chars", "has_whitespace_chars").TrimEnd();
+
+                                    // Switch from: (("has_whitespace_chars"(cart_name,(0))=(0)));
+                                    // To:          (("has_whitespace_chars"(cart_name,(0))=false));
+
+                                    if (updatedLine.EndsWith("=(0)));"))
+                                    {
+                                        updatedLine = updatedLine.Replace("=(0)));", "=false));");
+                                    }
+                                }
+                            }
+                            else if (setDefaultMatch.Success)
+                            {
+                                var tableName = GetNameWithoutSchema(setDefaultMatch.Groups["TableName"].Value.Trim()).Trim('"');
+                                referencedTables.Clear();
+                                referencedTables.Add(tableName);
+
+                                updatedLine = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, updatedLine, false);
                             }
 
                             cachedLines.Add(updatedLine);
