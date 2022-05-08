@@ -12,6 +12,31 @@ namespace PgSqlViewCreatorHelper
     {
         // Ignore Spelling: dbo, dms, dpkg, mc, ont, sw
 
+        /// <summary>
+        /// Match any lowercase letter
+        /// </summary>
+        private readonly Regex mAnyLowerMatcher;
+
+        /// <summary>
+        /// Match a lowercase letter followed by an uppercase letter
+        /// </summary>
+        private readonly Regex mCamelCaseMatcher;
+
+        /// <summary>
+        /// Match any character that is not a letter, number, or underscore
+        /// </summary>
+        private readonly Regex mColumnCharNonStandardMatcher;
+
+        /// <summary>
+        /// This matches alias names surrounded by double quotes
+        /// </summary>
+        private readonly Regex mQuotedAliasNameMatcher;
+
+        /// <summary>
+        /// This matches alias names with characters a-z, 0-9, or underscore
+        /// </summary>
+        private readonly Regex mUnquotedAliasNameMatcher;
+
         private readonly ViewCreatorHelperOptions mOptions;
 
         /// <summary>
@@ -21,6 +46,16 @@ namespace PgSqlViewCreatorHelper
         public ViewCreatorHelper(ViewCreatorHelperOptions options)
         {
             mOptions = options;
+
+            mAnyLowerMatcher = new Regex("[a-z]", RegexOptions.Compiled | RegexOptions.Singleline);
+
+            mCamelCaseMatcher = new Regex("(?<LowerLetter>[a-z])(?<UpperLetter>[A-Z])", RegexOptions.Compiled);
+
+            mColumnCharNonStandardMatcher = new Regex("[^a-z0-9_]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+            mQuotedAliasNameMatcher = new Regex("(?<ColumnName>[a-z_]+)?(?<As>[ \t]+AS[ \t]+)\"(?<AliasName>[^\"]+)\"", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+            mUnquotedAliasNameMatcher = new Regex("(?<ColumnName>[a-z_]+)?(?<As>[ \t]+AS[ \t]+)(?<AliasName>[a-z0-9_]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         }
 
         private void AppendCreateView(
@@ -45,6 +80,75 @@ namespace PgSqlViewCreatorHelper
             writer.WriteLine("--");
             writer.WriteLine("-- The PgSQL View Creator Helper will convert any comments on views to COMMENT ON VIEW statements");
             writer.WriteLine();
+        }
+
+
+        /// <summary>
+        /// Convert a column alias to snake_case, including replacing / removing symbols
+        /// </summary>
+        /// <param name="aliasName"></param>
+        private string ConvertColumnAliasToSnakeCase(string aliasName)
+        {
+            // Replace spaces and dashes with underscores
+            aliasName = aliasName.Replace(' ', '_');
+            aliasName = aliasName.Replace('-', '_');
+
+            // Remove periods at the end of words
+            aliasName = aliasName.TrimEnd('.').Replace("._", "_");
+
+            // Remove parentheses
+            var openParenthesesIndex = aliasName.IndexOf('(');
+            if (openParenthesesIndex > 0)
+            {
+                var closeParenthesesIndex = aliasName.IndexOf(')', openParenthesesIndex);
+
+                if (closeParenthesesIndex > 0)
+                {
+                    // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+                    if (aliasName.Substring(openParenthesesIndex - 1, 1).Equals("_"))
+                    {
+                        aliasName = aliasName.Replace("_(", "_");
+                    }
+                    else
+                    {
+                        aliasName = aliasName.Replace("(", "_");
+                    }
+
+                    aliasName = aliasName.Replace(")", string.Empty);
+                }
+            }
+
+            // Replace percent sign with pct
+            aliasName = aliasName.Replace("%", "pct");
+
+            // Convert to snake case
+            aliasName = ConvertNameToSnakeCase(aliasName);
+
+            // Return the updated name, quoting if it contains characters other than a-z, 0-9, or underscore
+            return mColumnCharNonStandardMatcher.IsMatch(aliasName)
+                ? string.Format("\"{0}\"", aliasName)
+                : aliasName;
+        }
+
+        /// <summary>
+        /// Convert the object name to snake_case
+        /// </summary>
+        /// <param name="objectName"></param>
+        private string ConvertNameToSnakeCase(string objectName)
+        {
+            if (!mAnyLowerMatcher.IsMatch(objectName))
+            {
+                // objectName contains no lowercase letters; simply change to lowercase and return
+                return objectName.ToLower();
+            }
+
+            var match = mCamelCaseMatcher.Match(objectName);
+
+            var updatedName = match.Success
+                ? mCamelCaseMatcher.Replace(objectName, "${LowerLetter}_${UpperLetter}")
+                : objectName;
+
+            return updatedName.ToLower();
         }
 
         /// <summary>
@@ -122,6 +226,26 @@ namespace PgSqlViewCreatorHelper
             {
                 OnErrorEvent("Error in CreateMergedColumnNameMapFile", ex);
             }
+        }
+
+
+        /// <summary>
+        /// Get the object name, without the schema
+        /// </summary>
+        /// <remarks>
+        /// Simply looks for the first period and assumes the schema name is before the period and the object name is after it
+        /// </remarks>
+        /// <param name="objectName"></param>
+        private static string GetNameWithoutSchema(string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+                return string.Empty;
+
+            var periodIndex = objectName.IndexOf('.');
+            if (periodIndex > 0 && periodIndex < objectName.Length - 1)
+                return objectName.Substring(periodIndex + 1);
+
+            return objectName;
         }
 
         private bool LoadNameMapFiles(
@@ -524,6 +648,12 @@ namespace PgSqlViewCreatorHelper
 
                 workingCopy = workingCopy.TrimEnd().TrimEnd('\t').TrimEnd();
 
+
+                if (mOptions.SnakeCaseColumnAliases && !fromTableFound)
+                {
+                    workingCopy = SnakeCaseColumnAliases(workingCopy, out var renamedColumnAliasesInView);
+
+                }
                 if (originalLine.Equals(workingCopy))
                 {
                     writer.WriteLine(originalLine);
@@ -550,6 +680,62 @@ namespace PgSqlViewCreatorHelper
             }
 
             return true;
+        }
+
+        private string SnakeCaseColumnAliases(string dataLine, out List<KeyValuePair<string, string>> renamedColumnAliasesInView)
+        {
+            renamedColumnAliasesInView = new List<KeyValuePair<string, string>>();
+
+            dataLine = SnakeCaseColumnAliasMatches(dataLine, mQuotedAliasNameMatcher.Matches(dataLine), renamedColumnAliasesInView);
+
+            dataLine = SnakeCaseColumnAliasMatches(dataLine, mUnquotedAliasNameMatcher.Matches(dataLine), renamedColumnAliasesInView);
+
+            return dataLine;
+        }
+
+        private string SnakeCaseColumnAliasMatches(
+            string dataLine,
+            MatchCollection matches,
+            ICollection<KeyValuePair<string, string>> renamedColumnAliasesInView)
+        {
+            foreach (Match aliasMatch in matches)
+            {
+                var originalName = aliasMatch.Groups["AliasName"].Value;
+
+                var updatedName = ConvertColumnAliasToSnakeCase(originalName);
+
+                if (updatedName.Equals(originalName))
+                    continue;
+
+                string replacementText;
+
+                if (updatedName.StartsWith("\""))
+                {
+                    // The updated name is quoted
+                    replacementText = string.Format("{0}{1}{2}", aliasMatch.Groups["ColumnName"], aliasMatch.Groups["As"], updatedName);
+                }
+                else
+                {
+                    // The updated name is not quoted
+
+                    // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
+                    if (aliasMatch.Groups["ColumnName"].Value.Equals(updatedName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // The updated name matches the database column name
+                        replacementText = aliasMatch.Groups["ColumnName"].Value;
+                    }
+                    else
+                    {
+                        replacementText = string.Format("{0}{1}{2}", aliasMatch.Groups["ColumnName"], aliasMatch.Groups["As"], updatedName);
+                    }
+                }
+
+                dataLine = dataLine.Replace(aliasMatch.Value, replacementText);
+
+                renamedColumnAliasesInView.Add(new KeyValuePair<string, string>(originalName, updatedName));
+            }
+
+            return dataLine;
         }
     }
 }

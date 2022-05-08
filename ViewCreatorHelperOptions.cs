@@ -42,6 +42,13 @@ namespace PgSqlViewCreatorHelper
             HelpText = "Schema to prefix table names with (when the name does not have a schema)")]
         public string DefaultSchema { get; set; }
 
+        [Option("SnakeCaseColumnAliases", "SnakeCaseColumns", "SnakeCaseAliases", "Snake", HelpShowsDefault = true,
+            HelpText = "When true, convert aliased column names to snake case (e.g. switch from ColumnName to column_name); additionally:\n" +
+                       "  Replace spaces and dashes with underscores\n" +
+                       "  Replace percent signs with pct\n" +
+                       "  Remove periods at the end of words\n" +
+                       "  Remove parentheses")]
+        public bool SnakeCaseColumnAliases { get; set; }
         [Option("Verbose", "V", HelpShowsDefault = true,
             HelpText = "When true, display the old and new version of each updated line")]
         public bool VerboseOutput { get; set; }
@@ -88,6 +95,8 @@ namespace PgSqlViewCreatorHelper
 
             Console.WriteLine(" {0,-35} {1}", "Default schema name:",
                 string.IsNullOrWhiteSpace(DefaultSchema) ? "not defined" : DefaultSchema);
+
+            Console.WriteLine(" {0,-35} {1}", "Snake case column aliases:", SnakeCaseColumnAliases);
 
             Console.WriteLine(" {0,-35} {1}", "Verbose Output:", VerboseOutput);
 
