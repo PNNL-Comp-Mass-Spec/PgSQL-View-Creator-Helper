@@ -271,10 +271,22 @@ namespace PgSqlViewCreatorHelper
 
                 writer.WriteLine(string.Join("\t", headerColumns));
 
+                // This sorted set is used to prevent duplicate lines in the output file
+                var columnRenames = new SortedSet<string>();
+
                 foreach (var currentView in updatedColumnNamesAndAliases)
                 {
+                    columnRenames.Clear();
+
                     foreach (var item in currentView.Value)
                     {
+                        var keyName = string.Format("{0}_{1}", item.OriginalColumnName, item.NewColumnName);
+
+                        if (columnRenames.Contains(keyName))
+                            continue;
+
+                        columnRenames.Add(keyName);
+
                         writer.WriteLine(
                             "{0}\t{1}\t{2}\t{3}",
                             currentView.Key, item.OriginalColumnName, item.NewColumnName, item.IsColumnAlias);
