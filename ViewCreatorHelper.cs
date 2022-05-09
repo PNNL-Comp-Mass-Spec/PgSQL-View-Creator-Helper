@@ -10,7 +10,7 @@ namespace PgSqlViewCreatorHelper
 {
     public class ViewCreatorHelper : EventNotifier
     {
-        // Ignore Spelling: dbo, dms, dpkg, mc, ont, sw
+        // Ignore Spelling: dbo, dms, dpkg, mc, nvarchar, ont, sw, varchar
 
         /// <summary>
         /// Match any lowercase letter
@@ -27,6 +27,15 @@ namespace PgSqlViewCreatorHelper
         /// </summary>
         private readonly Regex mColumnCharNonStandardMatcher = new("[^a-z0-9_]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
+        /// <summary>
+        /// This matches spaces and tabs at the start of a line
+        /// </summary>
+        private readonly Regex mLeadingWhitespaceMatcher = new("^[\t ]+", RegexOptions.Compiled);
+
+        /// <summary>
+        /// This is used to find rows in view definitions with multiple columns, separated by a comma
+        /// </summary>
+        private readonly Regex mMultiColumnMatcher = new(@"(?<FirstColumn>[ \t]AS[ \t]+[^,\r\n]+,)(?<SecondColumn>.+,)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// This matches alias names surrounded by double quotes
@@ -408,6 +417,76 @@ namespace PgSqlViewCreatorHelper
             return true;
         }
 
+        private List<string> MoveViewColumnsToNextLine(List<string> cachedLines)
+        {
+            var updatedLines = new List<string>();
+
+            foreach (var dataLine in cachedLines)
+            {
+                MoveViewColumnsToNextLine(dataLine, updatedLines);
+            }
+
+            return updatedLines;
+        }
+
+        private void MoveViewColumnsToNextLine(string dataLine, ICollection<string> updatedLines)
+        {
+            var startIndex = 0;
+
+            while (!string.IsNullOrWhiteSpace(dataLine))
+            {
+                var match = mMultiColumnMatcher.Match(dataLine, startIndex);
+
+                if (!match.Success)
+                {
+                    updatedLines.Add(dataLine);
+                    return;
+                }
+
+                var firstColumn = match.Groups["FirstColumn"].Value;
+
+                if (firstColumn.IndexOf(" char", StringComparison.OrdinalIgnoreCase) > 0 ||
+                    firstColumn.IndexOf(" decimal", StringComparison.OrdinalIgnoreCase) > 0 ||
+                    firstColumn.IndexOf(" float", StringComparison.OrdinalIgnoreCase) > 0 ||
+                    firstColumn.IndexOf(" nvarchar", StringComparison.OrdinalIgnoreCase) > 0 ||
+                    firstColumn.IndexOf(" varchar", StringComparison.OrdinalIgnoreCase) > 0)
+                {
+                    startIndex = match.Index + 2;
+                    if (startIndex >= dataLine.Length)
+                    {
+                        updatedLines.Add(dataLine);
+                        return;
+                    }
+
+                    continue;
+                }
+
+                startIndex = 0;
+
+                if (match.Index == 0)
+                {
+                    updatedLines.Add(firstColumn);
+                }
+                else
+                {
+                    updatedLines.Add(dataLine.Substring(0, match.Index) + firstColumn);
+                }
+
+                var whitespaceMatch = mLeadingWhitespaceMatcher.Match(dataLine);
+
+                var secondColumn = match.Groups["SecondColumn"].Value;
+
+                if (whitespaceMatch.Success)
+                {
+                    dataLine = whitespaceMatch.Value + secondColumn;
+                }
+                else
+                {
+                    dataLine = "       " + secondColumn;
+                }
+            }
+        }
+
         /// <summary>
         /// Process the input file
         /// </summary>
@@ -685,6 +764,7 @@ namespace PgSqlViewCreatorHelper
                 }
             }
 
+            cachedLines = MoveViewColumnsToNextLine(cachedLines);
 
             var viewNames = new List<string>();
             var viewComments = new List<string>();
