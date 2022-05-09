@@ -697,6 +697,31 @@ namespace PgSqlViewCreatorHelper
             var viewComments = new List<string>();
 
             // Look for table names in cachedLines, updating as appropriate
+            // First look for the line that starts with "FROM" and then start looking for table names
+            // Next, process all of the cached lines
+
+            var fromTableFound = false;
+
+            // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+            foreach (var dataLine in cachedLines)
+            {
+                if (dataLine.Trim().StartsWith("--"))
+                {
+                    continue;
+                }
+
+                if (dataLine.Trim().StartsWith("FROM", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Found the FROM keyword
+                    fromTableFound = true;
+                }
+
+                if (fromTableFound)
+                {
+                    NameUpdater.FindAndUpdateTableNames(tableNameMap, referencedTables, dataLine, true);
+                }
+            }
+
             foreach (var dataLine in cachedLines)
             {
                 var match1 = createViewAsMatcher.Match(dataLine);
@@ -721,8 +746,9 @@ namespace PgSqlViewCreatorHelper
                 updatedLines.Add(new KeyValuePair<string, string>(dataLine, updatedLine));
             }
 
-            var fromTableFound = false;
             var renamedColumnsInView = new List<RenamedColumnInfo>();
+
+            fromTableFound = false;
 
             // Look for column names in updatedLines, updating as appropriate
             // Also look for comments
