@@ -8,6 +8,14 @@ namespace TableColumnNameMapContainer
     public static class NameUpdater
     {
         /// <summary>
+        /// This is used to find column alias names in views
+        /// </summary>
+        /// <remarks>
+        /// The AliasName capture group includes the text after " AS" continuing until the next comma, or the end of the line
+        /// </remarks>
+        private static readonly Regex mAliasMatcher = new("[ \t]AS[ \t]+(?<AliasName>[^,]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
         /// This is used to match expressions of the form
         /// WHERE identifier LIKE '[0-9]%'
         /// </summary>
@@ -137,9 +145,24 @@ namespace TableColumnNameMapContainer
         {
             renamedColumns = new List<KeyValuePair<string, string>>();
 
-            var workingCopy = string.Copy(dataLine);
+            string workingCopy;
+            string suffix;
 
-            var asIndex = workingCopy.IndexOf(" AS ", StringComparison.OrdinalIgnoreCase);
+            var aliasMatch = mAliasMatcher.Match(dataLine);
+
+            if (aliasMatch.Success && aliasMatch.Index > 0)
+            {
+                // Do not look for updated table names in the column alias
+                // Store the text in suffix, then re-append to workingCopy after the for loop
+
+                workingCopy = dataLine.Substring(0, aliasMatch.Index);
+                suffix = dataLine.Substring(aliasMatch.Index);
+            }
+            else
+            {
+                workingCopy = string.Copy(dataLine);
+                suffix = string.Empty;
+            }
 
             foreach (var updatedTableName in (from item in referencedTables orderby item.Value select item.Key))
             {
@@ -173,6 +196,11 @@ namespace TableColumnNameMapContainer
 
                     workingCopy = updatedLine;
                 }
+            }
+
+            if (!string.IsNullOrWhiteSpace(suffix))
+            {
+                workingCopy += suffix;
             }
 
             if (mLikeMatcher.IsMatch(workingCopy))
