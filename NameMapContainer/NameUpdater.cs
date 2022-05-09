@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace TableColumnNameMapContainer
@@ -26,13 +28,16 @@ namespace TableColumnNameMapContainer
         /// Dictionary where keys are the original (source) table names
         /// and values are WordReplacer classes that track the new table names and new column names in PostgreSQL
         /// </param>
-        /// <param name="referencedTables">Table names found in the region that contains the data line (using new table names, not the source table name)</param>
+        /// <param name="referencedTables">
+        /// Table names found in the region that contains the data line (using new table names, not the source table name)
+        /// Keys are table names; values are the order that the table names appear in the view definition
+        /// </param>
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         /// <returns>Updated line with new table names</returns>
         public static string FindAndUpdateTableNames(
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
-            SortedSet<string> referencedTables,
+            Dictionary<string, int> referencedTables,
             string dataLine,
             bool updateSchema)
         {
@@ -47,9 +52,9 @@ namespace TableColumnNameMapContainer
                 workingCopy = updatedLine;
 
                 var updatedTableName = item.Value.ReplacementText;
-                if (!referencedTables.Contains(updatedTableName))
+                if (!referencedTables.ContainsKey(updatedTableName))
                 {
-                    referencedTables.Add(updatedTableName);
+                    referencedTables.Add(updatedTableName, referencedTables.Count + 1);
                 }
             }
 
@@ -64,12 +69,15 @@ namespace TableColumnNameMapContainer
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
         /// names should not have double quotes around them
         /// </param>
-        /// <param name="referencedTables">Table names found in the region that contains the data line (using new table names, not the source table name)</param>
+        /// <param name="referencedTables">
+        /// Table names found in the region that contains the data line (using new table names, not the source table name)
+        /// Keys are table names; values are the order that the table names appear in the view definition
+        /// </param>
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
-            SortedSet<string> referencedTables,
+            Dictionary<string, int> referencedTables,
             string dataLine,
             bool updateSchema)
         {
@@ -84,13 +92,16 @@ namespace TableColumnNameMapContainer
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
         /// names should not have double quotes around them
         /// </param>
-        /// <param name="referencedTables">Table names found in the region that contains the data line (using new table names, not the source table name)</param>
+        /// <param name="referencedTables">
+        /// Table names found in the region that contains the data line (using new table names, not the source table name)
+        /// Keys are table names; values are the order that the table names appear in the view definition
+        /// </param>
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         /// <param name="renamedColumns">List of renamed columns</param>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
-            SortedSet<string> referencedTables,
+            Dictionary<string, int> referencedTables,
             string dataLine,
             bool updateSchema,
             out List<KeyValuePair<string, string>> renamedColumns)
@@ -99,7 +110,9 @@ namespace TableColumnNameMapContainer
 
             var workingCopy = string.Copy(dataLine);
 
-            foreach (var updatedTableName in referencedTables)
+            var asIndex = workingCopy.IndexOf(" AS ", StringComparison.OrdinalIgnoreCase);
+
+            foreach (var updatedTableName in (from item in referencedTables orderby item.Value select item.Key))
             {
                 if (!columnNameMap.TryGetValue(updatedTableName, out var nameMapping))
                 {

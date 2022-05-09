@@ -463,7 +463,8 @@ namespace PgSqlViewCreatorHelper
 
                 var matchedViews = new List<string>();
 
-                var referencedTables = new SortedSet<string>();
+                // Keys in this dictionary are table names; values are the order that the table names appear in the view definition
+                var referencedTables = new Dictionary<string, int>();
 
                 // Keys in this dictionary are view names
                 // Values are the list of updated column names (or column aliases)
@@ -559,7 +560,7 @@ namespace PgSqlViewCreatorHelper
                             {
                                 var tableName = GetNameWithoutSchema(checkConstraintMatch.Groups["TableName"].Value.Trim()).Trim('"');
                                 referencedTables.Clear();
-                                referencedTables.Add(tableName);
+                                referencedTables.Add(tableName, 1);
 
                                 updatedLine = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, updatedLine, false);
 
@@ -581,7 +582,7 @@ namespace PgSqlViewCreatorHelper
                             {
                                 var tableName = GetNameWithoutSchema(setDefaultMatch.Groups["TableName"].Value.Trim()).Trim('"');
                                 referencedTables.Clear();
-                                referencedTables.Add(tableName);
+                                referencedTables.Add(tableName, 1);
 
                                 updatedLine = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, updatedLine, false);
                             }
@@ -657,7 +658,8 @@ namespace PgSqlViewCreatorHelper
             // Values are the updated version
             var updatedLines = new List<KeyValuePair<string, string>>();
 
-            var referencedTables = new SortedSet<string>();
+            // Keys in this dictionary are table names; values are the order that the table names appear in the view definition
+            var referencedTables = new Dictionary<string, int>();
 
             var createViewMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             var createViewAsMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+) +AS *$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
