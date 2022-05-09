@@ -248,6 +248,44 @@ namespace PgSqlViewCreatorHelper
             }
         }
 
+        private void CreateRenamedColumnMapFile(FileInfo inputFile, Dictionary<string, List<RenamedColumnInfo>> updatedColumnNamesAndAliases)
+        {
+            try
+            {
+                if (inputFile.Directory == null)
+                {
+                    return;
+                }
+
+                var renamedColumnMapFile = Path.GetFileNameWithoutExtension(inputFile.Name) + "_RenamedColumns.txt";
+                var outputFilePath = Path.Combine(inputFile.Directory.FullName, renamedColumnMapFile);
+
+                OnStatusEvent("Creating " + outputFilePath);
+
+                using var writer = new StreamWriter(new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read));
+
+                var headerColumns = new List<string>
+                {
+                    "View", "OriginalColumnName", "NewColumnName", "IsColumnAlias"
+                };
+
+                writer.WriteLine(string.Join("\t", headerColumns));
+
+                foreach (var currentView in updatedColumnNamesAndAliases)
+                {
+                    foreach (var item in currentView.Value)
+                    {
+                        writer.WriteLine(
+                            "{0}\t{1}\t{2}\t{3}",
+                            currentView.Key, item.OriginalColumnName, item.NewColumnName, item.IsColumnAlias);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                OnErrorEvent("Error in CreateRenamedColumnMapFile", ex);
+            }
+        }
 
         /// <summary>
         /// Get the object name, without the schema
@@ -571,6 +609,10 @@ namespace PgSqlViewCreatorHelper
                         writer.WriteLine("SELECT * FROM {0};", viewName);
                     }
 
+                    if (mOptions.CreateRenamedColumnMapFile)
+                    {
+                        CreateRenamedColumnMapFile(inputFile, updatedColumnNamesAndAliases);
+                    }
                 }
 
                 CreateMergedColumnNameMapFile(inputFile.Directory, columnMapFile, tableNameMap, columnNameMap);
@@ -647,6 +689,7 @@ namespace PgSqlViewCreatorHelper
                     break;
                 }
             }
+
 
             var viewNames = new List<string>();
             var viewComments = new List<string>();

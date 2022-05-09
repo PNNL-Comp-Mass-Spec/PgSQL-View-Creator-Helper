@@ -11,7 +11,7 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        public const string PROGRAM_DATE = "May 6, 2022";
+        public const string PROGRAM_DATE = "May 7, 2022";
 
         [Option("Input", "I", ArgPosition = 1, HelpShowsDefault = false, IsInputFilePath = true,
             HelpText = "SQL script file to process")]
@@ -49,6 +49,15 @@ namespace PgSqlViewCreatorHelper
                        "  Remove periods at the end of words\n" +
                        "  Remove parentheses")]
         public bool SnakeCaseColumnAliases { get; set; }
+
+        [Option("CreateRenamedColumnMapFile", "CreateColumnMapFile", "LogRenamed", HelpShowsDefault = true,
+            HelpText = "When true, create a tab-delimited text file that lists the renamed columns and column aliases for each view")]
+        public bool CreateRenamedColumnMapFile { get; set; }
+
+        [Option("RenamedMapFileIncludeCaseChange", "IncludeCaseChange", "LogCaseChanges", HelpShowsDefault = true,
+            HelpText = "When true, include columns and column aliases where the only change was to convert to lowercase")]
+        public bool IncludeCaseChangeInRenamedColumnMapFile { get; set; }
+
         [Option("Verbose", "V", HelpShowsDefault = true,
             HelpText = "When true, display the old and new version of each updated line")]
         public bool VerboseOutput { get; set; }
@@ -99,6 +108,10 @@ namespace PgSqlViewCreatorHelper
             Console.WriteLine(" {0,-35} {1}", "Snake case column aliases:", SnakeCaseColumnAliases);
 
             Console.WriteLine(" {0,-35} {1}", "Verbose Output:", VerboseOutput);
+
+            Console.WriteLine(" {0,-45} {1}", "Create renamed column map file:", CreateRenamedColumnMapFile);
+
+            Console.WriteLine(" {0,-45} {1}", "Include case change only columns in map file:", IncludeCaseChangeInRenamedColumnMapFile);
 
             Console.WriteLine();
         }
