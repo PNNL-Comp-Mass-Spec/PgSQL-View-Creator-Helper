@@ -6,17 +6,17 @@ namespace TableColumnNameMapContainer
     public static class NameUpdater
     {
         /// <summary>
-        /// This is used to find names surrounded by square brackets
-        /// </summary>
-        /// <remarks>The brackets will be changed to double quotes</remarks>
-        private static readonly Regex mAliasMatcher = new(@"\[(?<AliasName>[^]]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-        /// <summary>
         /// This is used to match expressions of the form
         /// WHERE identifier LIKE '[0-9]%'
         /// </summary>
         /// <remarks>If a match is found, switch from LIKE to SIMILAR TO</remarks>
         private static readonly Regex mLikeMatcher = new(@"\bLIKE(?<ComparisonSpec>\s*'.*\[[^]]+\].*')", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// This is used to find names surrounded by square brackets
+        /// </summary>
+        /// <remarks>The brackets will be changed to double quotes</remarks>
+        private static readonly Regex mQuotedNameMatcher = new(@"\[(?<QuotedName>[^]]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// Look for known table names in the data line
@@ -144,9 +144,9 @@ namespace TableColumnNameMapContainer
             // value as [The Value]
             // to
             // value as "The Value"
-            if (mAliasMatcher.IsMatch(workingCopy))
+            if (mQuotedNameMatcher.IsMatch(workingCopy))
             {
-                workingCopy = mAliasMatcher.Replace(workingCopy, "\"${AliasName}\"");
+                workingCopy = mQuotedNameMatcher.Replace(workingCopy, "\"${QuotedName}\"");
             }
 
             return workingCopy;
