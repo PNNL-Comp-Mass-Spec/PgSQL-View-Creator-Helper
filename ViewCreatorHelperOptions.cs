@@ -109,7 +109,7 @@ namespace PgSqlViewCreatorHelper
 
             Console.WriteLine(" {0,-35} {1}", "Verbose Output:", VerboseOutput);
 
-            Console.WriteLine(" {0,-45} {1}", "Create renamed column map file:", CreateRenamedColumnMapFile);
+            Console.WriteLine(" {0,-35} {1}", "Create renamed column map file:", CreateRenamedColumnMapFile);
 
             Console.WriteLine(" {0,-45} {1}", "Include case change only columns in map file:", IncludeCaseChangeInRenamedColumnMapFile);
 
