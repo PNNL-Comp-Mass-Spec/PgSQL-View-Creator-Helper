@@ -15,27 +15,28 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Match any lowercase letter
         /// </summary>
-        private readonly Regex mAnyLowerMatcher;
+        private readonly Regex mAnyLowerMatcher = new("[a-z]", RegexOptions.Compiled | RegexOptions.Singleline);
 
         /// <summary>
         /// Match a lowercase letter followed by an uppercase letter
         /// </summary>
-        private readonly Regex mCamelCaseMatcher;
+        private readonly Regex mCamelCaseMatcher = new("(?<LowerLetter>[a-z])(?<UpperLetter>[A-Z])", RegexOptions.Compiled);
 
         /// <summary>
         /// Match any character that is not a letter, number, or underscore
         /// </summary>
-        private readonly Regex mColumnCharNonStandardMatcher;
+        private readonly Regex mColumnCharNonStandardMatcher = new("[^a-z0-9_]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
 
         /// <summary>
         /// This matches alias names surrounded by double quotes
         /// </summary>
-        private readonly Regex mQuotedAliasNameMatcher;
+        private readonly Regex mQuotedAliasNameMatcher = new("(?<ColumnName>[a-z_]+)?(?<As>[ \t]+AS[ \t]+)\"(?<AliasName>[^\"]+)\"", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// This matches alias names with characters a-z, 0-9, or underscore
         /// </summary>
-        private readonly Regex mUnquotedAliasNameMatcher;
+        private readonly Regex mUnquotedAliasNameMatcher = new("(?<ColumnName>[a-z_]+)?(?<As>[ \t]+AS[ \t]+)(?<AliasName>[a-z0-9_]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly ViewCreatorHelperOptions mOptions;
 
@@ -46,16 +47,6 @@ namespace PgSqlViewCreatorHelper
         public ViewCreatorHelper(ViewCreatorHelperOptions options)
         {
             mOptions = options;
-
-            mAnyLowerMatcher = new Regex("[a-z]", RegexOptions.Compiled | RegexOptions.Singleline);
-
-            mCamelCaseMatcher = new Regex("(?<LowerLetter>[a-z])(?<UpperLetter>[A-Z])", RegexOptions.Compiled);
-
-            mColumnCharNonStandardMatcher = new Regex("[^a-z0-9_]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
-
-            mQuotedAliasNameMatcher = new Regex("(?<ColumnName>[a-z_]+)?(?<As>[ \t]+AS[ \t]+)\"(?<AliasName>[^\"]+)\"", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-            mUnquotedAliasNameMatcher = new Regex("(?<ColumnName>[a-z_]+)?(?<As>[ \t]+AS[ \t]+)(?<AliasName>[a-z0-9_]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         }
 
         private void AppendCreateView(
