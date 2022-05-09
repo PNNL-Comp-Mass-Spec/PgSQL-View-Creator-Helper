@@ -100,7 +100,7 @@ View	SourceColumnName	NewColumnName	IsColumnAlias
 "public"."v_analysis_job_detail_report_2"	AJ_propagationMode	propagation_mode	False
 "public"."v_analysis_job_detail_report_2"	Export Mode	export_mode	True
 "public"."v_analysis_job_detail_report_2"	Dataset Unreviewed	dataset_unreviewed	True
-"public"."v_analysis_job_detail_report_2"	MyEMSL State	my_emsl_state	True
+"public"."v_analysis_job_detail_report_2"	MyEMSL State	myemsl_state	True
 "public"."v_analysis_job_detail_report_2"	Processor Group	processor_group	True
 "public"."v_analysis_job_detail_report_2"	AJ_datasetID	dataset_id	False
 "public"."v_analysis_job_detail_report_2"	EX_organism_ID	organism_id	False

@@ -283,7 +283,7 @@ SELECT AJ.job AS job_num,
            ELSE 'No Export'
        END AS export_mode,
        public.t_yes_no.description AS dataset_unreviewed,
-       public.t_myemsl_state.myemsl_state_name AS my_emsl_state,
+       public.t_myemsl_state.myemsl_state_name AS myemsl_state,
       AJPG.group_name AS processor_group
 FROM S_V_BTO_ID_to_Name AS BTO
      RIGHT OUTER JOIN public.t_analysis_job AS AJ
