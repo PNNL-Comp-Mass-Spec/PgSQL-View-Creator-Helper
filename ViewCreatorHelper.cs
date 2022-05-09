@@ -464,7 +464,7 @@ namespace PgSqlViewCreatorHelper
                 var matchedViews = new List<string>();
 
                 // Keys in this dictionary are table names; values are the order that the table names appear in the view definition
-                var referencedTables = new Dictionary<string, int>();
+                var referencedTables = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
                 // Keys in this dictionary are view names
                 // Values are the list of updated column names (or column aliases)
@@ -659,7 +659,7 @@ namespace PgSqlViewCreatorHelper
             var updatedLines = new List<KeyValuePair<string, string>>();
 
             // Keys in this dictionary are table names; values are the order that the table names appear in the view definition
-            var referencedTables = new Dictionary<string, int>();
+            var referencedTables = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             var createViewMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             var createViewAsMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+) +AS *$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
