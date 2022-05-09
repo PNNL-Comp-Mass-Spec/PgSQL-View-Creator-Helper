@@ -13,16 +13,6 @@ namespace PgSqlViewCreatorHelper
         // Ignore Spelling: dbo, dms, dpkg, mc, nvarchar, ont, sw, varchar
 
         /// <summary>
-        /// Match any lowercase letter
-        /// </summary>
-        private readonly Regex mAnyLowerMatcher = new("[a-z]", RegexOptions.Compiled | RegexOptions.Singleline);
-
-        /// <summary>
-        /// Match a lowercase letter followed by an uppercase letter
-        /// </summary>
-        private readonly Regex mCamelCaseMatcher = new("(?<LowerLetter>[a-z])(?<UpperLetter>[A-Z])", RegexOptions.Compiled);
-
-        /// <summary>
         /// Match any character that is not a letter, number, or underscore
         /// </summary>
         private readonly Regex mColumnCharNonStandardMatcher = new("[^a-z0-9_]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
@@ -142,33 +132,12 @@ namespace PgSqlViewCreatorHelper
             aliasName = aliasName.Replace("%", "pct");
 
             // Convert to snake case
-            aliasName = ConvertNameToSnakeCase(aliasName);
+            aliasName = NameUpdater.ConvertNameToSnakeCase(aliasName);
 
             // Return the updated name, quoting if it contains characters other than a-z, 0-9, or underscore
             return mColumnCharNonStandardMatcher.IsMatch(aliasName)
                 ? string.Format("\"{0}\"", aliasName)
                 : aliasName;
-        }
-
-        /// <summary>
-        /// Convert the object name to snake_case
-        /// </summary>
-        /// <param name="objectName"></param>
-        private string ConvertNameToSnakeCase(string objectName)
-        {
-            if (!mAnyLowerMatcher.IsMatch(objectName))
-            {
-                // objectName contains no lowercase letters; simply change to lowercase and return
-                return objectName.ToLower();
-            }
-
-            var match = mCamelCaseMatcher.Match(objectName);
-
-            var updatedName = match.Success
-                ? mCamelCaseMatcher.Replace(objectName, "${LowerLetter}_${UpperLetter}")
-                : objectName;
-
-            return updatedName.ToLower();
         }
 
         /// <summary>
@@ -401,7 +370,7 @@ namespace PgSqlViewCreatorHelper
 
                 foreach (var columnItem in tableItem.Value)
                 {
-                    var updatedColumnName = ConvertNameToSnakeCase(columnItem.Key);
+                    var updatedColumnName = NameUpdater.ConvertNameToSnakeCase(columnItem.Key);
 
                     if (updatedColumnName.Equals(columnItem.Key, StringComparison.OrdinalIgnoreCase))
                         continue;

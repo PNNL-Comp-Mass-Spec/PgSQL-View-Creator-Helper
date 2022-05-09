@@ -16,6 +16,16 @@ namespace TableColumnNameMapContainer
         private static readonly Regex mAliasMatcher = new("[ \t]AS[ \t]+(?<AliasName>[^,]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
+        /// Match any lowercase letter
+        /// </summary>
+        private static readonly Regex mAnyLowerMatcher = new("[a-z]", RegexOptions.Compiled | RegexOptions.Singleline);
+
+        /// <summary>
+        /// Match a lowercase letter followed by an uppercase letter
+        /// </summary>
+        private static readonly Regex mCamelCaseMatcher = new("(?<LowerLetter>[a-z])(?<UpperLetter>[A-Z])", RegexOptions.Compiled);
+
+        /// <summary>
         /// This is used to match expressions of the form
         /// WHERE identifier LIKE '[0-9]%'
         /// </summary>
@@ -27,6 +37,27 @@ namespace TableColumnNameMapContainer
         /// </summary>
         /// <remarks>The brackets will be changed to double quotes</remarks>
         private static readonly Regex mQuotedNameMatcher = new(@"\[(?<QuotedName>[^]]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// Convert the object name to snake_case
+        /// </summary>
+        /// <param name="objectName"></param>
+        public static string ConvertNameToSnakeCase(string objectName)
+        {
+            if (!mAnyLowerMatcher.IsMatch(objectName))
+            {
+                // objectName contains no lowercase letters; simply change to lowercase and return
+                return objectName.ToLower();
+            }
+
+            var match = mCamelCaseMatcher.Match(objectName);
+
+            var updatedName = match.Success
+                ? mCamelCaseMatcher.Replace(objectName, "${LowerLetter}_${UpperLetter}")
+                : objectName;
+
+            return updatedName.ToLower();
+        }
 
         /// <summary>
         /// Look for known table names in the data line
