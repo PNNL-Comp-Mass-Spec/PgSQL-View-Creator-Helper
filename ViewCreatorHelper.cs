@@ -741,6 +741,12 @@ namespace PgSqlViewCreatorHelper
                     continue;
                 }
 
+                if (dataLine.Trim().StartsWith("--"))
+                {
+                    updatedLines.Add(new KeyValuePair<string, string>(dataLine, dataLine));
+                    continue;
+                }
+
                 var updatedLine = NameUpdater.FindAndUpdateTableNames(tableNameMap, referencedTables, dataLine, true);
 
                 updatedLines.Add(new KeyValuePair<string, string>(dataLine, updatedLine));
