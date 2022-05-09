@@ -61,6 +61,35 @@ namespace TableColumnNameMapContainer
             return workingCopy;
         }
 
+        // ReSharper disable once UnusedMember.Global
+
+        /// <summary>
+        /// Update column names in dictionary columnNameMap
+        /// </summary>
+        /// <param name="columnNameMap">
+        /// Dictionary where keys are new table names
+        /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
+        /// names should not have double quotes around them
+        /// </param>
+        /// <param name="referencedTables"> Table names found in the region that contains the data line (using new table names, not the source table name)</param>
+        /// <param name="dataLine">Text to examine</param>
+        /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
+        public static string UpdateColumnNames(
+            Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
+            SortedSet<string> referencedTables,
+            string dataLine,
+            bool updateSchema)
+        {
+            var tableDictionary = new Dictionary<string, int>();
+
+            foreach (var item in referencedTables)
+            {
+                tableDictionary.Add(item, tableDictionary.Count + 1);
+            }
+
+            return UpdateColumnNames(columnNameMap, tableDictionary, dataLine, updateSchema, out _);
+        }
+
         /// <summary>
         /// Update column names in dictionary columnNameMap
         /// </summary>
