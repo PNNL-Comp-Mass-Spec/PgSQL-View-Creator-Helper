@@ -302,7 +302,7 @@ namespace PgSqlViewCreatorHelper
             // and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
             // names should not have double quotes around them
 
-            // Dictionary tableNameMapSynonyms mas original table names to new table names
+            // Dictionary tableNameMapSynonyms has original table names to new table names
 
             var columnMapFileLoaded = mapReader.LoadSqlServerToPgSqlColumnMapFile(
                 columnMapFile,
