@@ -266,7 +266,7 @@ namespace PgSqlViewCreatorHelper
 
                 var headerColumns = new List<string>
                 {
-                    "View", "OriginalColumnName", "NewColumnName", "IsColumnAlias"
+                    "View", "SourceColumnName", "NewColumnName", "IsColumnAlias"
                 };
 
                 writer.WriteLine(string.Join("\t", headerColumns));
