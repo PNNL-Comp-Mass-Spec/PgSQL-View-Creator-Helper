@@ -11,13 +11,13 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        public const string PROGRAM_DATE = "May 7, 2022";
+        public const string PROGRAM_DATE = "May 9, 2022";
 
         [Option("Input", "I", ArgPosition = 1, HelpShowsDefault = false, IsInputFilePath = true,
             HelpText = "SQL script file to process")]
         public string InputScriptFile { get; set; }
 
-        [Option("Map", "M", ArgPosition = 2, HelpShowsDefault = false, IsInputFilePath = true,
+        [Option("Map", "M", HelpShowsDefault = false, IsInputFilePath = true,
             HelpText = "Column name map file (typically created by sqlserver2pgsql.pl)\n" +
                        "Tab-delimited file with five columns:\n" +
                        "SourceTable  SourceName  Schema  NewTable  NewName")]
