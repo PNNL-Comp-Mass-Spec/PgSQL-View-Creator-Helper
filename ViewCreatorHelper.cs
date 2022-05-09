@@ -654,6 +654,8 @@ namespace PgSqlViewCreatorHelper
             ICollection<string> matchedViews,
             IDictionary<string, List<RenamedColumnInfo>> updatedColumnNamesAndAliases)
         {
+            const int MINIMUM_COLUMN_NAME_LENGTH_TO_RENAME = 3;
+
             // Keys in this list are the original version of the line
             // Values are the updated version
             var updatedLines = new List<KeyValuePair<string, string>>();
@@ -787,7 +789,9 @@ namespace PgSqlViewCreatorHelper
                     viewComments.Add(commentText.Replace('\'', '"'));
                 }
 
-                var workingCopy = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, dataLine.Value, true, out var renamedColumns);
+                var workingCopy = NameUpdater.UpdateColumnNames(
+                    columnNameMap, referencedTables, dataLine.Value, true,
+                    MINIMUM_COLUMN_NAME_LENGTH_TO_RENAME, out var renamedColumns);
 
                 // Use || for string concatenation, instead of +
                 if (stringConcatenationMatcher1.IsMatch(workingCopy))

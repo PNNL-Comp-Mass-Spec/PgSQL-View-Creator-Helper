@@ -82,11 +82,16 @@ namespace TableColumnNameMapContainer
         /// <param name="referencedTables"> Table names found in the region that contains the data line (using new table names, not the source table name)</param>
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
+        /// <param name="minimumNameLength">Minimum column name length to be considered for renaming</param>
+        /// <remarks>
+        /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
+        /// </remarks>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             SortedSet<string> referencedTables,
             string dataLine,
-            bool updateSchema)
+            bool updateSchema,
+            int minimumNameLength = 0)
         {
             var tableDictionary = new Dictionary<string, int>();
 
@@ -95,7 +100,7 @@ namespace TableColumnNameMapContainer
                 tableDictionary.Add(item, tableDictionary.Count + 1);
             }
 
-            return UpdateColumnNames(columnNameMap, tableDictionary, dataLine, updateSchema, out _);
+            return UpdateColumnNames(columnNameMap, tableDictionary, dataLine, updateSchema, minimumNameLength, out _);
         }
 
         /// <summary>
@@ -112,35 +117,44 @@ namespace TableColumnNameMapContainer
         /// </param>
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
-        public static string UpdateColumnNames(
-            Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
-            Dictionary<string, int> referencedTables,
-            string dataLine,
-            bool updateSchema)
-        {
-            return UpdateColumnNames(columnNameMap, referencedTables, dataLine, updateSchema, out _);
-        }
-
-        /// <summary>
-        /// Update column names in dictionary columnNameMap
-        /// </summary>
-        /// <param name="columnNameMap">
-        /// Dictionary where keys are new table names
-        /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
-        /// names should not have double quotes around them
-        /// </param>
-        /// <param name="referencedTables">
-        /// Table names found in the region that contains the data line (using new table names, not the source table name)
-        /// Keys are table names; values are the order that the table names appear in the view definition
-        /// </param>
-        /// <param name="dataLine">Text to examine</param>
-        /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
-        /// <param name="renamedColumns">List of renamed columns</param>
+        /// <param name="minimumNameLength">Minimum column name length to be considered for renaming</param>
+        /// <remarks>
+        /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
+        /// </remarks>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             Dictionary<string, int> referencedTables,
             string dataLine,
             bool updateSchema,
+            int minimumNameLength = 0)
+        {
+            return UpdateColumnNames(columnNameMap, referencedTables, dataLine, updateSchema, minimumNameLength, out _);
+        }
+
+        /// <summary>
+        /// Update column names in dictionary columnNameMap
+        /// </summary>
+        /// <param name="columnNameMap">
+        /// Dictionary where keys are new table names
+        /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
+        /// names should not have double quotes around them
+        /// </param>
+        /// <param name="referencedTables">
+        /// Table names found in the region that contains the data line (using new table names, not the source table name)
+        /// Keys are table names; values are the order that the table names appear in the view definition
+        /// </param>
+        /// <param name="dataLine">Text to examine</param>
+        /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
+        /// <param name="minimumNameLength">Minimum column name length to be considered for renaming</param>
+        /// <param name="renamedColumns">Output: List of renamed columns</param>
+        /// <remarks>
+        /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name</remarks>
+        public static string UpdateColumnNames(
+            Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
+            Dictionary<string, int> referencedTables,
+            string dataLine,
+            bool updateSchema,
+            int minimumNameLength,
             out List<KeyValuePair<string, string>> renamedColumns)
         {
             renamedColumns = new List<KeyValuePair<string, string>>();
@@ -176,6 +190,9 @@ namespace TableColumnNameMapContainer
                 foreach (var columnNameMatcher in nameMapping)
                 {
                     var wordReplacer = columnNameMatcher.Value;
+
+                    if (minimumNameLength > 0 && wordReplacer.TextToFind.Length < minimumNameLength)
+                        continue;
 
                     if (!wordReplacer.ProcessLine(workingCopy, updateSchema, out var updatedLine))
                         continue;
