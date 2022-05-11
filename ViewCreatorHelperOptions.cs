@@ -11,7 +11,7 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        public const string PROGRAM_DATE = "May 9, 2022";
+        public const string PROGRAM_DATE = "May 11, 2022";
 
         [Option("Input", "I", ArgPosition = 1, HelpShowsDefault = false, IsInputFilePath = true,
             HelpText = "SQL script file to process")]
@@ -49,6 +49,11 @@ namespace PgSqlViewCreatorHelper
                        "  Remove periods at the end of words\n" +
                        "  Remove parentheses")]
         public bool SnakeCaseColumnAliases { get; set; }
+
+        [Option("SnakeCaseDisableViewSuffixes", "SuffixesNoSnakeCase", "NoSnake", HelpShowsDefault = true,
+            HelpText = "Comma separated list of view name suffixes for which column aliases should not be converted to snake case\n" +
+                       "Additionally, for table columns that do not have an alias, if the column is renamed, add an alias using the original column name")]
+        public string SnakeCaseDisableViewSuffixes { get; set; }
 
         [Option("CreateRenamedColumnMapFile", "CreateColumnMapFile", "LogRenamed", HelpShowsDefault = true,
             HelpText = "When true, create a tab-delimited text file that lists the renamed columns and column aliases for each view")]
@@ -106,6 +111,8 @@ namespace PgSqlViewCreatorHelper
                 string.IsNullOrWhiteSpace(DefaultSchema) ? "not defined" : DefaultSchema);
 
             Console.WriteLine(" {0,-35} {1}", "Snake case column aliases:", SnakeCaseColumnAliases);
+
+            Console.WriteLine(" {0,-35} {1}", "View name suffixes no snake case:", SnakeCaseDisableViewSuffixes);
 
             Console.WriteLine(" {0,-35} {1}", "Verbose Output:", VerboseOutput);
 

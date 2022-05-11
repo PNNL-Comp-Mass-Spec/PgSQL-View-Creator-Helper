@@ -33,9 +33,19 @@ namespace PgSqlViewCreatorHelper
         private readonly Regex mQuotedAliasNameMatcher = new("(?<ColumnName>[a-z_]+)?(?<As>[ \t]+AS[ \t]+)\"(?<AliasName>[^\"]+)\"", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
+        /// This matches column names surrounded by square brackets or double quotes
+        /// </summary>
+        private readonly Regex mQuotedColumnNameMatcher = new(@"[""\[](?<ColumnName>[^]""]+)[""\]][ \t]*(?<Comma>,?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
         /// This matches alias names with characters a-z, 0-9, or underscore
         /// </summary>
         private readonly Regex mUnquotedAliasNameMatcher = new("(?<ColumnName>[a-z_]+)?(?<As>[ \t]+AS[ \t]+)(?<AliasName>[a-z0-9_]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// This matches unquoted column names
+        /// </summary>
+        private readonly Regex mUnquotedColumnNameMatcher = new(@"(?<ColumnName>[a-z_0-9]+)[ \t]*(?<Comma>,?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly ViewCreatorHelperOptions mOptions;
 
@@ -468,6 +478,24 @@ namespace PgSqlViewCreatorHelper
             }
         }
 
+        private bool PreserveColumnNamesInView(IEnumerable<string> matchedViews)
+        {
+            // ReSharper disable once LoopCanBeConvertedToQuery
+            foreach (var viewName in matchedViews)
+            {
+                var cleanName = TrimQuotes(GetNameWithoutSchema(viewName));
+
+                // ReSharper disable once LoopCanBeConvertedToQuery
+                foreach (var suffix in mOptions.SnakeCaseDisableViewSuffixes.Split(','))
+                {
+                    if (cleanName.EndsWith(suffix.Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Process the input file
         /// </summary>
@@ -776,6 +804,8 @@ namespace PgSqlViewCreatorHelper
                 }
             }
 
+            var viewsInCurrentBlock = new List<string>();
+
             foreach (var dataLine in cachedLines)
             {
                 var match1 = createViewAsMatcher.Match(dataLine);
@@ -784,6 +814,7 @@ namespace PgSqlViewCreatorHelper
                     AppendCreateView(match1, writer, matchedViews, out var viewName);
                     writer.WriteLine("AS");
                     viewNames.Add(viewName);
+                    viewsInCurrentBlock.Add(viewName);
                     continue;
                 }
 
@@ -792,6 +823,7 @@ namespace PgSqlViewCreatorHelper
                 {
                     AppendCreateView(match2, writer, matchedViews, out var viewName);
                     viewNames.Add(viewName);
+                    viewsInCurrentBlock.Add(viewName);
                     continue;
                 }
 
@@ -807,6 +839,8 @@ namespace PgSqlViewCreatorHelper
             }
 
             var renamedColumnsInView = new List<RenamedColumnInfo>();
+
+            var preserveColumnNames = PreserveColumnNamesInView(viewsInCurrentBlock);
 
             fromTableFound = false;
 
@@ -873,9 +907,11 @@ namespace PgSqlViewCreatorHelper
 
                 bool storedRenamedColumnAlias;
 
-                if (mOptions.SnakeCaseColumnAliases && !fromTableFound)
+                if (viewNames.Count > 0 && mOptions.SnakeCaseColumnAliases && !fromTableFound)
                 {
-                    workingCopy = SnakeCaseColumnAliases(workingCopy, out var renamedColumnAliasesInView);
+                    var originalColumnName = renamedColumns.Count == 1 ? renamedColumns[0].Key : string.Empty;
+
+                    workingCopy = SnakeCaseColumnAliases(workingCopy, preserveColumnNames, originalColumnName, out var renamedColumnAliasesInView);
 
                     storedRenamedColumnAlias = renamedColumnAliasesInView.Count > 0;
 
@@ -936,15 +972,72 @@ namespace PgSqlViewCreatorHelper
             return true;
         }
 
-        private string SnakeCaseColumnAliases(string dataLine, out List<KeyValuePair<string, string>> renamedColumnAliasesInView)
+        private string SnakeCaseColumnAliases(
+            string dataLine,
+            bool preserveColumnNames,
+            string originalColumnName,
+            out List<KeyValuePair<string, string>> renamedColumnAliasesInView)
         {
             renamedColumnAliasesInView = new List<KeyValuePair<string, string>>();
 
-            dataLine = SnakeCaseColumnAliasMatches(dataLine, mQuotedAliasNameMatcher.Matches(dataLine), renamedColumnAliasesInView);
+            var quotedAliasNameMatches = mQuotedAliasNameMatcher.Matches(dataLine);
 
-            dataLine = SnakeCaseColumnAliasMatches(dataLine, mUnquotedAliasNameMatcher.Matches(dataLine), renamedColumnAliasesInView);
+            if (preserveColumnNames)
+            {
+                if (dataLine.Trim().Equals("AS", StringComparison.OrdinalIgnoreCase))
+                    return dataLine;
 
-            return dataLine;
+                if (quotedAliasNameMatches.Count > 0 || mUnquotedAliasNameMatcher.Matches(dataLine).Count > 0)
+                {
+                    // The column name already has an alias; leave it unchanged
+                    return dataLine;
+                }
+
+                if (string.IsNullOrWhiteSpace(originalColumnName))
+                    return dataLine;
+
+                // Use the original column name as the alias (if it differs from the new column name)
+
+                var quotedColumnMatches = mQuotedColumnNameMatcher.Matches(dataLine);
+
+                if (quotedColumnMatches.Count > 0)
+                {
+                    var quotedColumnMatch = quotedColumnMatches[quotedColumnMatches.Count - 1];
+
+                    if (quotedColumnMatch.Groups["ColumnName"].Value.Equals(originalColumnName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Leave the line unchanged
+                        return dataLine;
+                    }
+
+                    return string.Format("{0} AS {1}{2}",
+                        dataLine.TrimEnd().TrimEnd(','), originalColumnName,
+                        quotedColumnMatch.Groups["Comma"].Value);
+                }
+
+                var unquotedColumnMatches = mUnquotedColumnNameMatcher.Matches(dataLine);
+
+                if (unquotedColumnMatches.Count == 0)
+                    return dataLine;
+
+                var unquotedColumnMatch = unquotedColumnMatches[unquotedColumnMatches.Count - 1];
+
+                if (unquotedColumnMatch.Groups["ColumnName"].Value.Equals(originalColumnName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Leave the line unchanged
+                    return dataLine;
+                }
+
+                return string.Format("{0} AS {1}{2}",
+                    dataLine.TrimEnd().TrimEnd(','), originalColumnName,
+                    unquotedColumnMatch.Groups["Comma"].Value);
+            }
+
+            dataLine = SnakeCaseColumnAliasMatches(dataLine, quotedAliasNameMatches, renamedColumnAliasesInView);
+
+            var unquotedAliasNameMatches = mUnquotedAliasNameMatcher.Matches(dataLine);
+
+            return SnakeCaseColumnAliasMatches(dataLine, unquotedAliasNameMatches, renamedColumnAliasesInView);
         }
 
         private string SnakeCaseColumnAliasMatches(
@@ -990,6 +1083,20 @@ namespace PgSqlViewCreatorHelper
             }
 
             return dataLine;
+        }
+
+        /// <summary>
+        /// If the object name begins and ends with double quotes, remove them
+        /// </summary>
+        /// <param name="objectName"></param>
+        private static string TrimQuotes(string objectName)
+        {
+            if (objectName.StartsWith("\"") && objectName.EndsWith("\""))
+            {
+                return objectName.Substring(1, objectName.Length - 2);
+            }
+
+            return objectName;
         }
     }
 }
