@@ -114,6 +114,9 @@ namespace TableColumnNameMapContainer
         /// <summary>
         /// Update column names in dictionary columnNameMap
         /// </summary>
+        /// <remarks>
+        /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
+        /// </remarks>
         /// <param name="columnNameMap">
         /// Dictionary where keys are new table names
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
@@ -123,9 +126,6 @@ namespace TableColumnNameMapContainer
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         /// <param name="minimumNameLength">Minimum column name length to be considered for renaming</param>
-        /// <remarks>
-        /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
-        /// </remarks>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             SortedSet<string> referencedTables,
@@ -146,6 +146,9 @@ namespace TableColumnNameMapContainer
         /// <summary>
         /// Update column names in dictionary columnNameMap
         /// </summary>
+        /// <remarks>
+        /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
+        /// </remarks>
         /// <param name="columnNameMap">
         /// Dictionary where keys are new table names
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
@@ -158,9 +161,6 @@ namespace TableColumnNameMapContainer
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         /// <param name="minimumNameLength">Minimum column name length to be considered for renaming</param>
-        /// <remarks>
-        /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
-        /// </remarks>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             Dictionary<string, int> referencedTables,
@@ -174,6 +174,9 @@ namespace TableColumnNameMapContainer
         /// <summary>
         /// Update column names in dictionary columnNameMap
         /// </summary>
+        /// <remarks>
+        /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
+        /// </remarks>
         /// <param name="columnNameMap">
         /// Dictionary where keys are new table names
         /// and values are a Dictionary of mappings of original column names to new column names in PostgreSQL;
@@ -187,8 +190,6 @@ namespace TableColumnNameMapContainer
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         /// <param name="minimumNameLength">Minimum column name length to be considered for renaming</param>
         /// <param name="renamedColumns">Output: List of renamed columns</param>
-        /// <remarks>
-        /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name</remarks>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             Dictionary<string, int> referencedTables,
