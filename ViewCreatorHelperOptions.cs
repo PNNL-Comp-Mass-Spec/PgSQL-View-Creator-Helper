@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Text;
 using PRISM;
 
 namespace PgSqlViewCreatorHelper
@@ -112,7 +113,40 @@ namespace PgSqlViewCreatorHelper
 
             Console.WriteLine(" {0,-35} {1}", "Snake case column aliases:", SnakeCaseColumnAliases);
 
-            Console.WriteLine(" {0,-35} {1}", "View name suffixes no snake case:", SnakeCaseDisableViewSuffixes);
+            if (SnakeCaseDisableViewSuffixes.Length > 40)
+            {
+                var currentLine = new StringBuilder();
+                var currentSuffixCount = 0;
+
+                currentLine.AppendFormat(" {0,-35} ", "View name suffixes no snake case:");
+
+                foreach (var suffix in SnakeCaseDisableViewSuffixes.Split(','))
+                {
+                    var newLength = currentLine.Length + suffix.Trim().Length + (currentSuffixCount > 0 ? 2 : 0);
+
+                    if (newLength > 110)
+                    {
+                        Console.WriteLine(currentLine);
+                        currentLine.Clear();
+                        currentSuffixCount = 0;
+
+                        currentLine.AppendFormat(" {0,-35} ", string.Empty);
+                    }
+
+                    if (currentSuffixCount > 0)
+                        currentLine.Append(", ");
+
+                    currentLine.Append(suffix.Trim());
+                    currentSuffixCount++;
+                }
+
+                Console.WriteLine(currentLine);
+                Console.WriteLine();
+            }
+            else
+            {
+                Console.WriteLine(" {0,-35} {1}", "View name suffixes no snake case:", SnakeCaseDisableViewSuffixes);
+            }
 
             Console.WriteLine(" {0,-35} {1}", "Verbose Output:", VerboseOutput);
 
