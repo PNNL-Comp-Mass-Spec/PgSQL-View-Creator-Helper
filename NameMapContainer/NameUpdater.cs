@@ -267,7 +267,12 @@ namespace TableColumnNameMapContainer
                         break;
                     }
 
-                    renamedColumns.Add(new KeyValuePair<string, string>(wordReplacer.TextToFind, wordReplacer.ReplacementText));
+                    var appendToList = renamedColumns.All(item => !item.Key.Equals(wordReplacer.TextToFind));
+
+                    if (appendToList)
+                    {
+                        renamedColumns.Add(new KeyValuePair<string, string>(wordReplacer.TextToFind, wordReplacer.ReplacementText));
+                    }
 
                     workingCopy = updatedLine;
                 }
