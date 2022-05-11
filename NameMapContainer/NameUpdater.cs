@@ -7,6 +7,10 @@ namespace TableColumnNameMapContainer
 {
     public static class NameUpdater
     {
+        // ReSharper disable once CommentTypo
+
+        // Ignore Spelling: Myemsl
+
         /// <summary>
         /// This is used to find column alias names in views
         /// </summary>
@@ -112,7 +116,7 @@ namespace TableColumnNameMapContainer
         // ReSharper disable once UnusedMember.Global
 
         /// <summary>
-        /// Update column names in dictionary columnNameMap
+        /// Update column names using dictionary columnNameMap
         /// </summary>
         /// <remarks>
         /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
@@ -148,7 +152,7 @@ namespace TableColumnNameMapContainer
         }
 
         /// <summary>
-        /// Update column names in dictionary columnNameMap
+        /// Update column names using dictionary columnNameMap
         /// </summary>
         /// <remarks>
         /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
@@ -180,7 +184,7 @@ namespace TableColumnNameMapContainer
         }
 
         /// <summary>
-        /// Update column names in dictionary columnNameMap
+        /// Update column names using dictionary columnNameMap
         /// </summary>
         /// <remarks>
         /// When processing columns in views, set minimumNameLength to 3 to avoid renaming columns named ID to an incorrect name
