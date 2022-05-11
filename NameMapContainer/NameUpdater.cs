@@ -126,6 +126,7 @@ namespace TableColumnNameMapContainer
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         /// <param name="skipCaseChangeReplacements">When true, skip any column mappings where the old and new column names are the same, ignoring case</param>
+        /// <param name="maxNumberOfRenames">Maximum number of renames to perform (0 for no limit)</param>
         /// <param name="minimumNameLength">Minimum column name length to be considered for renaming</param>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
@@ -133,6 +134,7 @@ namespace TableColumnNameMapContainer
             string dataLine,
             bool updateSchema,
             bool skipCaseChangeReplacements,
+            int maxNumberOfRenames = 0,
             int minimumNameLength = 0)
         {
             var tableDictionary = new Dictionary<string, int>();
@@ -142,7 +144,7 @@ namespace TableColumnNameMapContainer
                 tableDictionary.Add(item, tableDictionary.Count + 1);
             }
 
-            return UpdateColumnNames(columnNameMap, tableDictionary, dataLine, updateSchema, minimumNameLength, out _);
+            return UpdateColumnNames(columnNameMap, tableDictionary, dataLine, updateSchema, skipCaseChangeReplacements, maxNumberOfRenames, minimumNameLength, out _);
         }
 
         /// <summary>
@@ -163,6 +165,7 @@ namespace TableColumnNameMapContainer
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         /// <param name="skipCaseChangeReplacements">When true, skip any column mappings where the old and new column names are the same, ignoring case</param>
+        /// <param name="maxNumberOfRenames">Maximum number of renames to perform (0 for no limit)</param>
         /// <param name="minimumNameLength">Minimum column name length to be considered for renaming</param>
         public static string UpdateColumnNames(
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
@@ -170,9 +173,10 @@ namespace TableColumnNameMapContainer
             string dataLine,
             bool updateSchema,
             bool skipCaseChangeReplacements,
+            int maxNumberOfRenames = 0,
             int minimumNameLength = 0)
         {
-            return UpdateColumnNames(columnNameMap, referencedTables, dataLine, updateSchema, minimumNameLength, out _);
+            return UpdateColumnNames(columnNameMap, referencedTables, dataLine, updateSchema, skipCaseChangeReplacements, maxNumberOfRenames, minimumNameLength, out _);
         }
 
         /// <summary>
@@ -194,6 +198,7 @@ namespace TableColumnNameMapContainer
         /// <param name="dataLine">Text to examine</param>
         /// <param name="updateSchema">When true, add or update the schema associated with the ReplacementText</param>
         /// <param name="skipCaseChangeReplacements">When true, skip any column mappings where the old and new column names are the same, ignoring case</param>
+        /// <param name="maxNumberOfRenames">Maximum number of renames to perform (0 for no limit)</param>
         /// <param name="minimumNameLength">Minimum column name length to be considered for renaming</param>
         /// <param name="renamedColumns">Output: List of renamed columns</param>
         public static string UpdateColumnNames(
@@ -202,6 +207,7 @@ namespace TableColumnNameMapContainer
             string dataLine,
             bool updateSchema,
             bool skipCaseChangeReplacements,
+            int maxNumberOfRenames,
             int minimumNameLength,
             out List<KeyValuePair<string, string>> renamedColumns)
         {
@@ -275,6 +281,17 @@ namespace TableColumnNameMapContainer
                     }
 
                     workingCopy = updatedLine;
+
+                    if (maxNumberOfRenames > 0 && renamedColumns.Count >= maxNumberOfRenames)
+                    {
+                        // The maximum number of renames has been reached
+                        break;
+                    }
+                }
+
+                if (maxNumberOfRenames > 0 && renamedColumns.Count >= maxNumberOfRenames)
+                {
+                    break;
                 }
             }
 

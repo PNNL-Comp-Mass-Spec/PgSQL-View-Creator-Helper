@@ -742,8 +742,12 @@ namespace PgSqlViewCreatorHelper
             // Keys in this dictionary are table names; values are the order that the table names appear in the view definition
             var referencedTables = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
+            var caseKeywordMatcher = new Regex(@"\b(WHEN|THEN|ELSE)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
             var createViewMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             var createViewAsMatcher = new Regex(@"\s*CREATE VIEW +(?<ViewName>.+) +AS *$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+            var commaMatcher = new Regex(",", RegexOptions.Compiled);
 
             var stringConcatenationMatcher1 = new Regex(@"'[\t ]*\+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             var stringConcatenationMatcher2 = new Regex(@"\+[\t ]*'", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -875,9 +879,34 @@ namespace PgSqlViewCreatorHelper
                     viewComments.Add(commentText.Replace('\'', '"'));
                 }
 
+                int maxNumberOfRenames;
+
+                if (viewNames.Count > 0 && !fromTableFound)
+                {
+                    if (caseKeywordMatcher.IsMatch(dataLine.Value))
+                    {
+                        // Do not limit the number of renames for case statements
+                        maxNumberOfRenames = 0;
+                    }
+                    else if (dataLine.Value.Contains("||"))
+                    {
+                        // Do not limit the number of renames when text is being concatenated
+                        maxNumberOfRenames = 0;
+                    }
+                    else
+                    {
+                        var commaMatches = commaMatcher.Matches(dataLine.Value);
+                        maxNumberOfRenames = commaMatches.Count + 1;
+                    }
+                }
+                else
+                {
+                    maxNumberOfRenames = 0;
+                }
+
                 var workingCopy = NameUpdater.UpdateColumnNames(
-                    MINIMUM_COLUMN_NAME_LENGTH_TO_RENAME, out var renamedColumns);
                     columnNameMap, referencedTables, dataLine.Value, true, true,
+                    maxNumberOfRenames, MINIMUM_COLUMN_NAME_LENGTH_TO_RENAME, out var renamedColumns);
 
                 // Use || for string concatenation, instead of +
                 if (stringConcatenationMatcher1.IsMatch(workingCopy))
