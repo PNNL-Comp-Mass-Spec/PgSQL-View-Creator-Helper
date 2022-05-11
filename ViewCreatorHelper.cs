@@ -641,7 +641,7 @@ namespace PgSqlViewCreatorHelper
                                 referencedTables.Clear();
                                 referencedTables.Add(tableName, 1);
 
-                                updatedLine = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, updatedLine, false);
+                                updatedLine = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, updatedLine, false, false);
 
                                 if (updatedLine.Contains("udf_whitespace_chars"))
                                 {
@@ -663,7 +663,7 @@ namespace PgSqlViewCreatorHelper
                                 referencedTables.Clear();
                                 referencedTables.Add(tableName, 1);
 
-                                updatedLine = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, updatedLine, false);
+                                updatedLine = NameUpdater.UpdateColumnNames(columnNameMap, referencedTables, updatedLine, false, false);
                             }
 
                             cachedLines.Add(updatedLine);
@@ -876,8 +876,8 @@ namespace PgSqlViewCreatorHelper
                 }
 
                 var workingCopy = NameUpdater.UpdateColumnNames(
-                    columnNameMap, referencedTables, dataLine.Value, true,
                     MINIMUM_COLUMN_NAME_LENGTH_TO_RENAME, out var renamedColumns);
+                    columnNameMap, referencedTables, dataLine.Value, true, true,
 
                 // Use || for string concatenation, instead of +
                 if (stringConcatenationMatcher1.IsMatch(workingCopy))
