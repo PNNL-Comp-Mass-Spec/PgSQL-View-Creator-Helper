@@ -2,12 +2,18 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using PRISM;
 
 namespace TableColumnNameMapContainer
 {
     public class NameMapReader : EventNotifier
     {
+        /// <summary>
+        /// Match any character that is not a letter, number, or underscore
+        /// </summary>
+        private readonly Regex mColumnCharNonStandardMatcher = new("[^a-z0-9_]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
         /// <summary>
         /// Read a five column name map file, which is typically created by sqlserver2pgsql.pl
         /// It is a tab-delimited file with five columns:
@@ -234,12 +240,14 @@ namespace TableColumnNameMapContainer
         }
 
         /// <summary>
-        /// If objectName does not contain any spaces, remove the double quotes surrounding it
+        /// If objectName only has letters, numbers, or underscores, remove any double quotes surrounding the name
         /// </summary>
         /// <param name="objectName"></param>
         private string PossiblyUnquote(string objectName)
         {
-            return objectName.Contains(' ') ? objectName : objectName.Trim('"');
+            var cleanName = objectName.Trim().Trim('"');
+
+            return mColumnCharNonStandardMatcher.IsMatch(cleanName) ? objectName : cleanName;
         }
     }
 }
