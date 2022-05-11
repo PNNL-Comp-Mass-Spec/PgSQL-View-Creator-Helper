@@ -84,8 +84,7 @@ namespace PgSqlViewCreatorHelper
 
         private void AppendRenamedColumns(
             ICollection<RenamedColumnInfo> renamedColumnsInView,
-            List<KeyValuePair<string, string>> renamedColumnAliasesInView,
-            bool isColumnAliases)
+            List<KeyValuePair<string, string>> renamedColumnAliasesInView)
         {
             // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
             foreach (var renamedColumn in renamedColumnAliasesInView)
@@ -99,7 +98,7 @@ namespace PgSqlViewCreatorHelper
                     continue;
                 }
 
-                renamedColumnsInView.Add(new RenamedColumnInfo(renamedColumn.Key, renamedColumn.Value, isColumnAliases));
+                renamedColumnsInView.Add(new RenamedColumnInfo(renamedColumn.Key, renamedColumn.Value));
             }
         }
 
@@ -245,7 +244,7 @@ namespace PgSqlViewCreatorHelper
 
                 var headerColumns = new List<string>
                 {
-                    "View", "SourceColumnName", "NewColumnName", "IsColumnAlias"
+                    "View", "SourceColumnName", "NewColumnName"
                 };
 
                 writer.WriteLine(string.Join("\t", headerColumns));
@@ -267,8 +266,8 @@ namespace PgSqlViewCreatorHelper
                         columnRenames.Add(keyName);
 
                         writer.WriteLine(
-                            "{0}\t{1}\t{2}\t{3}",
-                            currentView.Key, item.OriginalColumnName, item.NewColumnName, item.IsColumnAlias);
+                            "{0}\t{1}\t{2}",
+                            currentView.Key, item.OriginalColumnName, item.NewColumnName);
                     }
                 }
             }
@@ -944,7 +943,7 @@ namespace PgSqlViewCreatorHelper
 
                     storedRenamedColumnAlias = renamedColumnAliasesInView.Count > 0;
 
-                    AppendRenamedColumns(renamedColumnsInView, renamedColumnAliasesInView, true);
+                    AppendRenamedColumns(renamedColumnsInView, renamedColumnAliasesInView);
                 }
                 else
                 {
@@ -953,7 +952,7 @@ namespace PgSqlViewCreatorHelper
 
                 if (!storedRenamedColumnAlias)
                 {
-                    AppendRenamedColumns(renamedColumnsInView, renamedColumns, false);
+                    AppendRenamedColumns(renamedColumnsInView, renamedColumns);
                 }
 
                 if (originalLine.Equals(workingCopy))
