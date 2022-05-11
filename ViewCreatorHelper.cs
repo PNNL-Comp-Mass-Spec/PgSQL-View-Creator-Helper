@@ -688,7 +688,7 @@ namespace PgSqlViewCreatorHelper
                         writer.WriteLine("SELECT * FROM {0};", viewName);
                     }
 
-                    if (mOptions.CreateRenamedColumnMapFile)
+                    if (mOptions.SnakeCaseColumnAliases && mOptions.CreateRenamedColumnMapFile)
                     {
                         CreateRenamedColumnMapFile(inputFile, updatedColumnNamesAndAliases);
                     }

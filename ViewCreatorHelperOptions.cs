@@ -57,7 +57,8 @@ namespace PgSqlViewCreatorHelper
         public string SnakeCaseDisableViewSuffixes { get; set; }
 
         [Option("CreateRenamedColumnMapFile", "CreateColumnMapFile", "LogRenamed", HelpShowsDefault = true,
-            HelpText = "When true, create a tab-delimited text file that lists the renamed columns and column aliases for each view")]
+            HelpText = "When true, create a tab-delimited text file that lists the renamed columns for each view; this is only valid if SnakeCaseColumnAliases is also true\n" +
+                       "For aliased column names, if the column name in the database changed but the alias name did not change, the alias name will not be listed in this file")]
         public bool CreateRenamedColumnMapFile { get; set; }
 
         [Option("RenamedMapFileIncludeCaseChange", "IncludeCaseChange", "LogCaseChanges", HelpShowsDefault = true,
@@ -150,7 +151,7 @@ namespace PgSqlViewCreatorHelper
 
             Console.WriteLine(" {0,-35} {1}", "Verbose Output:", VerboseOutput);
 
-            Console.WriteLine(" {0,-35} {1}", "Create renamed column map file:", CreateRenamedColumnMapFile);
+            Console.WriteLine(" {0,-35} {1}", "Create renamed column map file:", SnakeCaseColumnAliases && CreateRenamedColumnMapFile);
 
             Console.WriteLine(" {0,-45} {1}", "Include case change only columns in map file:", IncludeCaseChangeInRenamedColumnMapFile);
 
