@@ -23,6 +23,10 @@ PgSqlViewCreatorHelper.exe
   [/Map2:SecondaryColumnMapFile]
   [/TableNameMap:TableNameMapFile]
   [/Schema:DefaultSchemaName]
+  [/Snake]
+  [/NoSnake]
+  [/LogRenamed]
+  [/LogCaseChanges]
   [/V]
   [/ParamFile:ParamFileName.conf] [/CreateParamFile]
 ```
@@ -133,6 +137,22 @@ Use `/TableNameMap` (or `/TableNames`) to optionally specify a tab-delimited tex
 
 
 Use `/Schema` to specify a default schema name to add before all table names (that don't already have a schema name prefix)
+
+Use `/SnakeCaseAliases` or `/Snake` to convert aliased column names to snake case (e.g. switch from ColumnName to column_name); additionally:
+* Replace spaces and dashes with underscores
+* Replace percent signs with pct
+* Remove periods at the end of words
+* Remove parentheses
+
+Use `/NoSnake` to provide a comma separated list of view name suffixes for which column aliases should not be converted to snake case
+* Additionally, for table columns that do not have an alias, if the column is renamed, add an alias using the original column name
+* For long lists, use a parameter file, as described below
+
+Use `/LogRenamed` to create a tab-delimited text file that lists the renamed columns for each view
+* This is only valid if /SnakeCaseAliases is true
+* For aliased column names, if the column name in the database changed but the alias name did not change, the alias name will not be listed in this file
+
+Use /`LogCaseChanges` to include columns and column aliases where the only change was to convert to lowercase
 
 Use `/V` to enable verbose mode, displaying the old and new version of each updated line
 
