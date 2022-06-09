@@ -12,7 +12,7 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// Program date
         /// </summary>
-        public const string PROGRAM_DATE = "May 11, 2022";
+        public const string PROGRAM_DATE = "June 9, 2022";
 
         [Option("Input", "I", ArgPosition = 1, HelpShowsDefault = false, IsInputFilePath = true,
             HelpText = "SQL script file to process")]

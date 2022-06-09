@@ -557,9 +557,9 @@ namespace PgSqlViewCreatorHelper
                     // Command "SET search_path" updates the search path for the current session
 
                     // To update permanently, use:
-                    // ALTER DATABASE dms SET search_path=public, sw, cap, dpkg, mc, ont;
+                    // ALTER DATABASE dms SET search_path=public, sw, cap, dpkg, mc, ont, pc, logdms, logcap, logsw;
 
-                    writer.WriteLine("SET search_path TO public, sw, cap, dpkg, mc, ont;");
+                    writer.WriteLine("SET search_path TO public, sw, cap, dpkg, mc, ont, pc, logdms, logcap, logsw;");
                     writer.WriteLine("SHOW search_path;");
                     writer.WriteLine();
 
