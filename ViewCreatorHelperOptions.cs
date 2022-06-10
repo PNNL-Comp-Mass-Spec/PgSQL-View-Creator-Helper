@@ -114,6 +114,8 @@ namespace PgSqlViewCreatorHelper
 
             Console.WriteLine(" {0,-35} {1}", "Snake case column aliases:", SnakeCaseColumnAliases);
 
+            SnakeCaseDisableViewSuffixes ??= string.Empty;
+
             if (SnakeCaseDisableViewSuffixes.Length > 40)
             {
                 var currentLine = new StringBuilder();
