@@ -18,6 +18,11 @@ namespace PgSqlViewCreatorHelper
         private readonly Regex mColumnCharNonStandardMatcher = new("[^a-z0-9_]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
         /// <summary>
+        /// This matches all of the commas in a line
+        /// </summary>
+        private readonly Regex mCommaMatcher = new(",", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
         /// This matches spaces and tabs at the start of a line
         /// </summary>
         private readonly Regex mLeadingWhitespaceMatcher = new("^[\t ]+", RegexOptions.Compiled);
@@ -576,6 +581,11 @@ namespace PgSqlViewCreatorHelper
                             continue;
                         }
 
+                        if (dataLine.Contains("Text to find"))
+                        {
+                            Console.WriteLine("Check this code");
+                        }
+
                         if (dataLine.Trim().StartsWith("Create View", StringComparison.OrdinalIgnoreCase))
                         {
                             if (viewsProcessed == 0)
@@ -1030,6 +1040,8 @@ namespace PgSqlViewCreatorHelper
 
                 // Use the original column name as the alias (if it differs from the new column name)
 
+                var commaMatches = mCommaMatcher.Matches(dataLine);
+
                 var quotedColumnMatches = mQuotedColumnNameMatcher.Matches(dataLine);
 
                 if (quotedColumnMatches.Count > 0)
@@ -1044,8 +1056,16 @@ namespace PgSqlViewCreatorHelper
 
                     hasColumnAlias = true;
 
-                    return string.Format("{0} AS {1}{2}",
-                        dataLine.TrimEnd().TrimEnd(','), originalColumnName,
+                    if (commaMatches.Count <= 1)
+                    {
+                        return string.Format("{0} AS {1}{2}",
+                            dataLine.TrimEnd().TrimEnd(','), originalColumnName,
+                            quotedColumnMatch.Groups["Comma"].Value);
+                    }
+
+                    // The line has multiple columns; adding an alias to the end of the line could lead to invalid SQL
+                    return string.Format("{0}   -- Use renamed_column AS {1}{2}",
+                        dataLine, originalColumnName,
                         quotedColumnMatch.Groups["Comma"].Value);
                 }
 
@@ -1063,9 +1083,16 @@ namespace PgSqlViewCreatorHelper
                 }
 
                 hasColumnAlias = true;
+                if (commaMatches.Count <= 1)
+                {
+                    return string.Format("{0} AS {1}{2}",
+                        dataLine.TrimEnd().TrimEnd(','), originalColumnName,
+                        unquotedColumnMatch.Groups["Comma"].Value);
+                }
 
-                return string.Format("{0} AS {1}{2}",
-                    dataLine.TrimEnd().TrimEnd(','), originalColumnName,
+                // The line has multiple columns; adding an alias to the end of the line could lead to invalid SQL
+                return string.Format("{0}   -- Use renamed_column AS {1}{2}",
+                    dataLine, originalColumnName,
                     unquotedColumnMatch.Groups["Comma"].Value);
             }
 
