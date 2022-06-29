@@ -25,7 +25,7 @@ namespace PgSqlViewCreatorHelper
         /// <summary>
         /// This is used to find rows in view definitions with multiple columns, separated by a comma
         /// </summary>
-        private readonly Regex mMultiColumnMatcher = new(@"(?<FirstColumn>[ \t]AS[ \t]+[^,\r\n]+,)(?<SecondColumn>.+,)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private readonly Regex mMultiColumnMatcher = new(@"(?<FirstColumn>[ \t]AS[ \t]+[^,\r\n]+,)(?<SecondColumn>.+,)(?<AdditionalText>.*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// This matches alias names surrounded by double quotes
@@ -465,14 +465,15 @@ namespace PgSqlViewCreatorHelper
                 var whitespaceMatch = mLeadingWhitespaceMatcher.Match(dataLine);
 
                 var secondColumn = match.Groups["SecondColumn"].Value;
+                var additionalText = match.Groups["AdditionalText"].Value;
 
                 if (whitespaceMatch.Success)
                 {
-                    dataLine = whitespaceMatch.Value + secondColumn;
+                    dataLine = whitespaceMatch.Value + secondColumn + additionalText;
                 }
                 else
                 {
-                    dataLine = "       " + secondColumn;
+                    dataLine = "       " + secondColumn + additionalText;
                 }
             }
         }
