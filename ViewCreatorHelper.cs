@@ -696,7 +696,7 @@ namespace PgSqlViewCreatorHelper
 
                     foreach (var viewName in matchedViews)
                     {
-                        writer.WriteLine("SELECT * FROM {0};", viewName);
+                        writer.WriteLine("SELECT * FROM {0} limit 2;", viewName);
                     }
 
                     if (mOptions.SnakeCaseColumnAliases && mOptions.CreateRenamedColumnMapFile)
