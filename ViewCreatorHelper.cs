@@ -10,7 +10,11 @@ namespace PgSqlViewCreatorHelper
 {
     public class ViewCreatorHelper : EventNotifier
     {
-        // Ignore Spelling: dbo, dms, dpkg, mc, nvarchar, ont, sw, varchar
+        // ReSharper disable CommentTypo
+
+        // Ignore Spelling: dbo, dms, dpkg, logdms, logcap, logsw, mc, nvarchar, ont, pc, sw, varchar
+
+        // ReSharper restore CommentTypo
 
         /// <summary>
         /// Match any character that is not a letter, number, or underscore
@@ -598,15 +602,23 @@ namespace PgSqlViewCreatorHelper
                 using (var reader = new StreamReader(new FileStream(inputFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 using (var writer = new StreamWriter(new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.Read)))
                 {
+                    // ReSharper disable CommentTypo
+                    // ReSharper disable StringLiteralTypo
+
                     // The default search path is: "$user", public
                     // The DMS database customizes this, as shown here
 
                     // Command "SET search_path" updates the search path for the current session
 
                     // To update permanently, use:
+
                     // ALTER DATABASE dms SET search_path=public, sw, cap, dpkg, mc, ont, pc, logdms, logcap, logsw;
 
                     writer.WriteLine("SET search_path TO public, sw, cap, dpkg, mc, ont, pc, logdms, logcap, logsw;");
+
+                    // ReSharper restore StringLiteralTypo
+                    // ReSharper restore CommentTypo
+
                     writer.WriteLine("SHOW search_path;");
                     writer.WriteLine();
 
