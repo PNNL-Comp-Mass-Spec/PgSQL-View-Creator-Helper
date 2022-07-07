@@ -64,19 +64,35 @@ namespace PgSqlViewCreatorHelper
         }
 
         private void AppendCreateView(
-            Match match,
             TextWriter writer,
+            string viewName,
+            string createViewLine,
             ICollection<string> matchedViews,
-            out string viewName)
+            ICollection<string> viewNames,
+            ICollection<string> viewsInCurrentBlock,
+            List<string> warningMessages,
+            bool skipAsKeyword)
         {
-            viewName = match.Groups["ViewName"].Value.Trim();
+            if (warningMessages == null)
+                throw new ArgumentNullException(nameof(warningMessages));
 
-            var newCreateViewLine = "CREATE OR REPLACE VIEW " + viewName.Trim();
+            foreach (var message in warningMessages)
+            {
+                writer.WriteLine(message);
+            }
 
-            OnDebugEvent(newCreateViewLine);
-            writer.WriteLine(newCreateViewLine);
+            OnDebugEvent(createViewLine);
+            writer.WriteLine(createViewLine);
+
+            if (!skipAsKeyword)
+            {
+                writer.WriteLine("AS");
+            }
 
             matchedViews.Add(viewName);
+
+            viewNames.Add(viewName);
+            viewsInCurrentBlock.Add(viewName);
         }
 
         private void AppendFormattingComment(TextWriter writer)
@@ -282,6 +298,15 @@ namespace PgSqlViewCreatorHelper
             }
         }
 
+        private string GetCreateViewLine(
+            Match match,
+            out string viewName)
+        {
+            viewName = match.Groups["ViewName"].Value.Trim();
+
+            return "CREATE OR REPLACE VIEW " + viewName.Trim();
+        }
+
         /// <summary>
         /// Get the object name, without the schema
         /// </summary>
@@ -307,7 +332,8 @@ namespace PgSqlViewCreatorHelper
         private bool LoadNameMapFiles(
             FileSystemInfo columnMapFile,
             out Dictionary<string, WordReplacer> tableNameMap,
-            out Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap)
+            out Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
+            out SortedSet<string> viewsToSkip)
         {
             var mapReader = new NameMapReader();
             RegisterEvents(mapReader);
@@ -327,6 +353,8 @@ namespace PgSqlViewCreatorHelper
                 true,
                 out tableNameMap,
                 out columnNameMap);
+
+            viewsToSkip = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
 
             if (!columnMapFileLoaded)
                 return false;
@@ -359,6 +387,16 @@ namespace PgSqlViewCreatorHelper
                         continue;
 
                     tableNameMapSynonyms.Add(item.SourceTableName, item.TargetTableName);
+                }
+
+                foreach (var item in tableNameMapSynonyms)
+                {
+                    if (item.Key.StartsWith("V_", StringComparison.OrdinalIgnoreCase) &&
+                        item.Value.Equals("<skip>", StringComparison.OrdinalIgnoreCase) &&
+                        !viewsToSkip.Contains(item.Key))
+                    {
+                        viewsToSkip.Add(item.Key);
+                    }
                 }
             }
 
@@ -545,7 +583,7 @@ namespace PgSqlViewCreatorHelper
                     return false;
                 }
 
-                if (!LoadNameMapFiles(columnMapFile, out var tableNameMap, out var columnNameMap))
+                if (!LoadNameMapFiles(columnMapFile, out var tableNameMap, out var columnNameMap, out var viewsToSkip))
                     return false;
 
                 var matchedViews = new List<string>();
@@ -584,7 +622,7 @@ namespace PgSqlViewCreatorHelper
                             continue;
                         }
 
-                        if (dataLine.Contains("Text to find"))
+                        if (dataLine.IndexOf("Text to find", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             Console.WriteLine("Check this code");
                         }
@@ -596,7 +634,7 @@ namespace PgSqlViewCreatorHelper
 
                             if (cachedLines.Count > 0)
                             {
-                                var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews, updatedColumnNamesAndAliases);
+                                var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews, updatedColumnNamesAndAliases, viewsToSkip);
                                 if (!success)
                                     return false;
 
@@ -688,7 +726,7 @@ namespace PgSqlViewCreatorHelper
 
                     if (cachedLines.Count > 0)
                     {
-                        var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews, updatedColumnNamesAndAliases);
+                        var success = ProcessCachedLines(cachedLines, tableNameMap, columnNameMap, writer, matchedViews, updatedColumnNamesAndAliases, viewsToSkip);
                         if (!success)
                             return false;
 
@@ -738,13 +776,15 @@ namespace PgSqlViewCreatorHelper
         /// <param name="updatedColumnNamesAndAliases">
         /// Dictionary where keys are view names and values are the list of updated column names (or column aliases)
         /// </param>
+        /// <param name="viewsToSkip">Names of views to not write to the output file</param>
         private bool ProcessCachedLines(
             List<string> cachedLines,
             IReadOnlyDictionary<string, WordReplacer> tableNameMap,
             Dictionary<string, Dictionary<string, WordReplacer>> columnNameMap,
             TextWriter writer,
             ICollection<string> matchedViews,
-            IDictionary<string, List<RenamedColumnInfo>> updatedColumnNamesAndAliases)
+            IDictionary<string, List<RenamedColumnInfo>> updatedColumnNamesAndAliases,
+            ICollection<string> viewsToSkip)
         {
             const int MINIMUM_COLUMN_NAME_LENGTH_TO_RENAME = 3;
 
@@ -767,25 +807,27 @@ namespace PgSqlViewCreatorHelper
 
             var leadingTabReplacer = new Regex(@"^\t+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+            var warningMessages = new List<string>();
+
             // Look for any use of CROSS APPLY or OUTER APPLY
             foreach (var dataLine in cachedLines)
             {
                 if (dataLine.IndexOf("cross apply", StringComparison.OrdinalIgnoreCase) > 0)
                 {
-                    writer.WriteLine("-- This view uses CROSS APPLY, which is not supported by PostgreSQL");
-                    writer.WriteLine("-- Consider using INNER JOIN LATERAL instead");
-                    writer.WriteLine("-- See also https://stackoverflow.com/a/35873193/1179467 and https://www.postgresql.org/docs/current/sql-select.html");
-                    writer.WriteLine();
+                    warningMessages.Add("-- This view uses CROSS APPLY, which is not supported by PostgreSQL");
+                    warningMessages.Add("-- Consider using INNER JOIN LATERAL instead");
+                    warningMessages.Add("-- See also https://stackoverflow.com/a/35873193/1179467 and https://www.postgresql.org/docs/current/sql-select.html");
+                    warningMessages.Add(string.Empty);
                     break;
                 }
 
                 // ReSharper disable once InvertIf
                 if (dataLine.IndexOf("outer apply", StringComparison.OrdinalIgnoreCase) > 0)
                 {
-                    writer.WriteLine("-- This view uses OUTER APPLY, which is not supported by PostgreSQL");
-                    writer.WriteLine("-- Consider using LEFT JOIN LATERAL instead");
-                    writer.WriteLine("-- See also https://stackoverflow.com/a/35873193/1179467 and https://www.postgresql.org/docs/current/sql-select.html");
-                    writer.WriteLine();
+                    warningMessages.Add("-- This view uses OUTER APPLY, which is not supported by PostgreSQL");
+                    warningMessages.Add("-- Consider using LEFT JOIN LATERAL instead");
+                    warningMessages.Add("-- See also https://stackoverflow.com/a/35873193/1179467 and https://www.postgresql.org/docs/current/sql-select.html");
+                    warningMessages.Add(string.Empty);
                     break;
                 }
             }
@@ -828,19 +870,30 @@ namespace PgSqlViewCreatorHelper
                 var match1 = createViewAsMatcher.Match(dataLine);
                 if (match1.Success)
                 {
-                    AppendCreateView(match1, writer, matchedViews, out var viewName);
-                    writer.WriteLine("AS");
-                    viewNames.Add(viewName);
-                    viewsInCurrentBlock.Add(viewName);
+                    var createViewLine = GetCreateViewLine(match1, out var viewName);
+
+                    if (viewsToSkip.Contains(viewName) || viewsToSkip.Contains(GetNameWithoutSchema(viewName, true)))
+                    {
+                        OnDebugEvent("Skipping view " + viewName);
+                        return true;
+                    }
+
+                    AppendCreateView(writer, viewName, createViewLine, matchedViews, viewNames, viewsInCurrentBlock, warningMessages, false);
                     continue;
                 }
 
                 var match2 = createViewMatcher.Match(dataLine);
                 if (match2.Success)
                 {
-                    AppendCreateView(match2, writer, matchedViews, out var viewName);
-                    viewNames.Add(viewName);
-                    viewsInCurrentBlock.Add(viewName);
+                    var createViewLine = GetCreateViewLine(match2, out var viewName);
+
+                    if (viewsToSkip.Contains(viewName) || viewsToSkip.Contains(GetNameWithoutSchema(viewName, true)))
+                    {
+                        OnDebugEvent("Skipping view " + viewName);
+                        return true;
+                    }
+
+                    AppendCreateView(writer, viewName, createViewLine, matchedViews, viewNames, viewsInCurrentBlock, warningMessages, true);
                     continue;
                 }
 
