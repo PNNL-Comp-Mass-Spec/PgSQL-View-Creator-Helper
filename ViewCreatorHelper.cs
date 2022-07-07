@@ -994,10 +994,13 @@ namespace PgSqlViewCreatorHelper
 
                 workingCopy = workingCopy.TrimEnd().TrimEnd('\t').TrimEnd();
 
-                if (workingCopy.Trim().StartsWith("FROM", StringComparison.OrdinalIgnoreCase))
+                if (!fromTableFound && workingCopy.Trim().StartsWith("FROM", StringComparison.OrdinalIgnoreCase))
                 {
                     // Found the FROM keyword; stop looking for column name aliases in this view
                     fromTableFound = true;
+
+                    // Trim the leading whitespace
+                    workingCopy = workingCopy.Trim();
                 }
 
                 bool hasColumnAlias;
