@@ -289,16 +289,19 @@ namespace PgSqlViewCreatorHelper
         /// Simply looks for the first period and assumes the schema name is before the period and the object name is after it
         /// </remarks>
         /// <param name="objectName"></param>
-        private static string GetNameWithoutSchema(string objectName)
+        /// <param name="removeDoubleQuotes"></param>
+        private static string GetNameWithoutSchema(string objectName, bool removeDoubleQuotes = false)
         {
             if (string.IsNullOrWhiteSpace(objectName))
                 return string.Empty;
 
+            var trimChars = removeDoubleQuotes ? new[] { '"' } : Array.Empty<char>();
+
             var periodIndex = objectName.IndexOf('.');
             if (periodIndex > 0 && periodIndex < objectName.Length - 1)
-                return objectName.Substring(periodIndex + 1);
+                return objectName.Substring(periodIndex + 1).Trim(trimChars);
 
-            return objectName;
+            return objectName.Trim(trimChars);
         }
 
         private bool LoadNameMapFiles(
