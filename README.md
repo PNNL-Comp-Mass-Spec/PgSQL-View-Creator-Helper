@@ -1,7 +1,7 @@
 # PgSQL View Creator Helper
 
-This program processes a SQL DDL file with `CREATE VIEW` commands and renames the
-column and table names referenced by the views to use new names defined in a
+This program processes a PostgreSQL DDL file with `CREATE VIEW` commands and renames the
+column and table names referenced by the Postgres views to use new names defined in a
 mapping file (or files).
 
 In addition, it creates a new `ColumnNameMap_merged.txt` file that merges the contents of the `/Map` and `/Map2` files
@@ -135,8 +135,8 @@ Use `/TableNameMap` (or `/TableNames`) to optionally specify a tab-delimited tex
 | T_Job_Events             | cap              | t_job_Events          | false     |                   |
 | T_Job_State_Name         | cap              | t_job_state_name      | true      | job               |
 | T_Users                  | public           | t_users               | true      | user_id           |
-| V_Tuning_Active_Sessions | public           | <skip>                |           |                   |
-| V_Tuning_Unused_Indices  | public           | <skip>                |           |                   |
+| V_Tuning_Active_Sessions | public           | &lt;skip&gt;          |           |                   |
+| V_Tuning_Unused_Indices  | public           | &lt;skip&gt;          |           |                   |
 
 
 Use `/Schema` to specify a default schema name to add before all table names (that don't already have a schema name prefix)
