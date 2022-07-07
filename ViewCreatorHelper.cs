@@ -86,6 +86,8 @@ namespace PgSqlViewCreatorHelper
             }
 
             OnDebugEvent(createViewLine);
+
+            writer.WriteLine();
             writer.WriteLine(createViewLine);
 
             if (!skipAsKeyword)
@@ -1077,7 +1079,6 @@ namespace PgSqlViewCreatorHelper
                 var viewComment = string.Join(". ", viewComments);
 
                 writer.WriteLine("COMMENT ON VIEW {0} IS '{1}';", viewName, viewComment);
-                writer.WriteLine();
             }
 
             return true;
