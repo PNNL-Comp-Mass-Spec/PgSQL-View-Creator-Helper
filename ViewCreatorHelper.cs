@@ -47,6 +47,11 @@ namespace PgSqlViewCreatorHelper
         private readonly Regex mQuotedColumnNameMatcher = new(@"[""\[](?<ColumnName>[^]""]+)[""\]][ \t]*(?<Comma>,?)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
+        /// This matches the word SELECT
+        /// </summary>
+        private readonly Regex mSelectKeywordMatcher = new(@"\bSELECT\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        /// <summary>
         /// This matches alias names with characters a-z, 0-9, or underscore
         /// </summary>
         private readonly Regex mUnquotedAliasNameMatcher = new("(?<ColumnName>[a-z_]+)?(?<As>[ \t]+AS[ \t]+)(?<AliasName>[a-z0-9_]+)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -333,6 +338,24 @@ namespace PgSqlViewCreatorHelper
                 return objectName.Substring(periodIndex + 1).Trim(trimChars);
 
             return objectName.Trim(trimChars);
+        }
+
+        /// <summary>
+        /// Looks for the word SELECT in dataLine
+        /// </summary>
+        /// <param name="dataLine">Text to search</param>
+        /// <param name="selectKeywordIndex">Index of the word SELECT in the line if found, otherwise -1</param>
+        /// <returns>True if found, otherwise false</returns>
+        private bool HasSelectKeyword(string dataLine, out int selectKeywordIndex)
+        {
+            var match = mSelectKeywordMatcher.Match(dataLine);
+
+            if (match.Success)
+                selectKeywordIndex = match.Index;
+            else
+                selectKeywordIndex = -1;
+
+            return match.Success;
         }
 
         private bool LoadNameMapFiles(
@@ -926,6 +949,8 @@ namespace PgSqlViewCreatorHelper
 
             var preserveColumnNames = PreserveColumnNamesInView(viewsInCurrentBlock);
 
+            var mostRecentSelectIndices = new Stack<int>();
+
             fromTableFound = false;
 
             // Look for column names in updatedLines, updating as appropriate
@@ -1015,6 +1040,26 @@ namespace PgSqlViewCreatorHelper
 
                     // Trim the leading whitespace
                     workingCopy = workingCopy.Trim();
+
+                    if (HasSelectKeyword(workingCopy, out var selectKeywordIndex))
+                    {
+                        mostRecentSelectIndices.Push(selectKeywordIndex);
+                    }
+                }
+                else if (fromTableFound)
+                {
+                    if (workingCopy.Trim().StartsWith("FROM", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (mostRecentSelectIndices.Count > 0)
+                        {
+                            // Align the FROM keyword with the most recent SELECT keyword
+                            workingCopy = new string(' ', mostRecentSelectIndices.Pop()) + workingCopy.Trim();
+                        }
+                    }
+                    else if (HasSelectKeyword(workingCopy, out var selectKeywordIndex))
+                    {
+                        mostRecentSelectIndices.Push(selectKeywordIndex);
+                    }
                 }
 
                 bool hasColumnAlias;
