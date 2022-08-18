@@ -1013,6 +1013,8 @@ namespace PgSqlViewCreatorHelper
                     columnNameMap, referencedTables, dataLine.Value, true, true,
                     maxNumberOfRenames, MINIMUM_COLUMN_NAME_LENGTH_TO_RENAME, out var renamedColumns);
 
+                workingCopy = PunctuationUpdater.ProcessLine(workingCopy);
+
                 // Use || for string concatenation, instead of +
                 if (stringConcatenationMatcher1.IsMatch(workingCopy))
                 {
