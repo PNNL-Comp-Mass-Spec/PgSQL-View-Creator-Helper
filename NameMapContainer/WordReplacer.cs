@@ -2,6 +2,10 @@
 
 namespace TableColumnNameMapContainer
 {
+    /// <summary>
+    /// This class is used to replace words with replacement text
+    /// </summary>
+    /// <remarks>It matches full words, ignoring case</remarks>
     public class WordReplacer
     {
         // Ignore Spelling: mc, Regex
@@ -82,7 +86,7 @@ namespace TableColumnNameMapContainer
         }
 
         /// <summary>
-        /// Look for TextToFind in dataLine (matching whole words, case sensitive)
+        /// Look for TextToFind in dataLine (matching whole words, case insensitive)
         /// If found, replace with ReplacementText
         /// </summary>
         /// <param name="dataLine">Text to search</param>
