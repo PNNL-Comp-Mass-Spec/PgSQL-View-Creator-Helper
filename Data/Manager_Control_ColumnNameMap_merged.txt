@@ -29,6 +29,9 @@ T_Mgrs	M_TypeID	mc	t_mgrs	mgr_type_id
 T_Mgrs	M_ParmValueChanged	mc	t_mgrs	param_value_changed
 T_Mgrs	M_ControlFromWebsite	mc	t_mgrs	control_from_website
 T_Mgrs	M_Comment	mc	t_mgrs	comment
+T_Mgrs	m_type_id	mc	t_mgrs	mgr_type_id
+T_Mgrs	m_parm_value_changed	mc	t_mgrs	param_value_changed
+T_Mgrs	m_control_from_website	mc	t_mgrs	control_from_website
 T_MgrType_ParamType_Map	mgr_type_id	mc	t_mgr_type_param_type_map	mgr_type_id
 T_MgrType_ParamType_Map	param_type_id	mc	t_mgr_type_param_type_map	param_type_id
 T_MgrType_ParamType_Map	DefaultValue	mc	t_mgr_type_param_type_map	default_value
@@ -54,6 +57,9 @@ T_OldManagers	M_TypeID	mc	t_old_managers	mgr_type_id
 T_OldManagers	M_ParmValueChanged	mc	t_old_managers	param_value_changed
 T_OldManagers	M_ControlFromWebsite	mc	t_old_managers	control_from_website
 T_OldManagers	M_Comment	mc	t_old_managers	comment
+T_OldManagers	m_type_id	mc	t_old_managers	mgr_type_id
+T_OldManagers	m_parm_value_changed	mc	t_old_managers	param_value_changed
+T_OldManagers	m_control_from_website	mc	t_old_managers	control_from_website
 T_ParamType	ParamID	mc	t_param_type	param_id
 T_ParamType	ParamName	mc	t_param_type	param_name
 T_ParamType	PicklistName	mc	t_param_type	picklist_name

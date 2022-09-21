@@ -1,4 +1,4 @@
-SET search_path TO public, sw, cap, dpkg, mc, ont;
+SET search_path TO public, sw, cap, dpkg, mc, ont, pc, logdms, logcap, logsw;
 SHOW search_path;
 
 -- PostgreSQL stores views as Parse Trees, meaning any whitespace that is present in the CREATE VIEW statements will be lost
@@ -27,6 +27,7 @@ ALTER TABLE "public"."t_organisms" ALTER COLUMN "created" SET DEFAULT CURRENT_TI
 ALTER TABLE "public"."t_organisms_change_history" ALTER COLUMN "entered" SET DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE "public"."t_organisms_change_history" ALTER COLUMN "entered_by" SET DEFAULT session_user;
 
+
 CREATE OR REPLACE VIEW "public"."v_organism_export"
 AS
 SELECT DISTINCT O.Organism_ID,
@@ -54,12 +55,13 @@ SELECT DISTINCT O.Organism_ID,
                 O.active AS Active,
                 O.organism_db_path AS OrganismDBPath,
                 -- Remove or update since skipped column: O.OG_RowVersion
-    FROM public.t_organisms O
+FROM public.t_organisms O
      LEFT OUTER JOIN S_V_CV_NEWT NEWT
        ON CAST(O.NCBI_Taxonomy_ID AS varchar(24)) = NEWT.identifier
      LEFT OUTER JOIN S_V_NCBI_Taxonomy_Cached NCBI
        ON O.NCBI_Taxonomy_ID = NCBI.Tax_ID
 ;
+
 CREATE OR REPLACE VIEW "public"."v_eus_export_dataset_metadata"
 AS
 SELECT D.Dataset_ID AS Dataset_ID,
@@ -68,20 +70,20 @@ SELECT D.Dataset_ID AS Dataset_ID,
        EUS_Inst.EUS_Instrument_ID AS EUS_Instrument_ID,
        DTN.dataset_type AS Dataset_Type,
        COALESCE(D.Acq_Time_Start, D.created) AS Dataset_Acq_Time_Start,
-       U_DS_Operator.username AS Instrument_Operator,
+       U_DS_Operator.eus_usage_type AS Instrument_Operator,
        DRN.dataset_rating AS Dataset_Rating,
        E.experiment AS Experiment,
        O.organism AS Organism,
        E.reason AS Experiment_Reason,
        E.comment AS Experiment_Comment,
-       U_Ex_Researcher.username AS Experiment_Researcher,
+       U_Ex_Researcher.eus_usage_type AS Experiment_Researcher,
        SPR.ID AS Prep_Request_ID,
        SPR.Assigned_Personnel AS Prep_Request_Staff,
        SPRState.State_Name AS Prep_Request_State,
        C.campaign AS Campaign,
-       COALESCE(U_ProjMgr.username, C.project_mgr_prn) AS Project_Manager,
-       COALESCE(U_PI.username, C.pi_prn) AS Project_PI,
-       COALESCE(U_TechLead.username, C.technical_lead) AS Project_Technical_Lead,
+       COALESCE(U_ProjMgr.eus_usage_type, C.project_mgr_prn) AS Project_Manager,
+       COALESCE(U_PI.eus_usage_type, C.pi_prn) AS Project_PI,
+       COALESCE(U_TechLead.eus_usage_type, C.technical_lead) AS Project_Technical_Lead,
        D.operator_prn AS Instrument_Operator_PRN,
        E.researcher_prn AS Experiment_Researcher_PRN,
        C.project_mgr_prn AS Project_Manager_PRN,
@@ -89,34 +91,34 @@ SELECT D.Dataset_ID AS Dataset_ID,
        C.technical_lead AS Project_Technical_Lead_PRN,
        EUT.eus_usage_type AS EUS_Usage,
        RR.eus_proposal_id AS EUS_Proposal,APath.AP_archive_path||'/'||D.DS_folder_name AS Dataset_Path_Aurora
-    FROM public.t_campaign C
+FROM public.t_campaign C
      INNER JOIN public.t_dataset D
                 INNER JOIN public.t_instrument_name Inst
                   ON D.instrument_id = Inst.Instrument_ID
                 INNER JOIN public.t_dataset_type_name DTN
                   ON D.dataset_type_ID = DTN.dataset_type_id
                 INNER JOIN public.t_users U_DS_Operator
-                  ON D.operator_prn = U_DS_Operator.prn
+                  ON D.operator_prn = U_DS_Operator.username
                 INNER JOIN public.t_dataset_rating_name DRN
                   ON D.dataset_rating_id = DRN.dataset_rating_id
                 INNER JOIN public.t_experiments E
                   ON D.Exp_ID = E.Exp_ID
                 INNER JOIN public.t_users U_Ex_Researcher
-                  ON E.researcher_prn = U_Ex_Researcher.prn
+                  ON E.researcher_prn = U_Ex_Researcher.username
                 INNER JOIN public.t_organisms O
                   ON E.organism_id = O.Organism_ID
        ON C.Campaign_ID = E.campaign_id
      LEFT OUTER JOIN public.t_users U_TechLead
-       ON C.technical_lead = U_TechLead.prn
+       ON C.technical_lead = U_TechLead.username
      LEFT OUTER JOIN public.t_users U_PI
-       ON C.pi_prn = U_PI.prn
+       ON C.pi_prn = U_PI.username
      LEFT OUTER JOIN public.t_users U_ProjMgr
-       ON C.project_mgr_prn = U_ProjMgr.prn
+       ON C.project_mgr_prn = U_ProjMgr.username
      LEFT OUTER JOIN public.t_sample_prep_request SPR
        ON E.sample_prep_request_id = SPR.ID AND
           SPR.ID <> 0
      LEFT OUTER JOIN public.t_sample_prep_request_state_name SPRState
-       ON SPR.State = SPRState.State_ID
+       ON SPR.state_id = SPRState.State_ID
      LEFT OUTER JOIN public.t_requested_run RR
        ON RR.dataset_id = D.Dataset_ID
      LEFT OUTER JOIN public.t_eus_usage_type EUT
@@ -127,8 +129,9 @@ SELECT D.Dataset_ID AS Dataset_ID,
        ON DA.dataset_id = D.Dataset_ID
      LEFT OUTER JOIN public.t_archive_path APath
        ON APath.archive_path_id = DA.storage_path_id
-WHERE D.DS_State_ID=3 AND D.dataset_rating_id NOT IN (-1, -2, -5)
+WHERE D.dataset_state_id=3 AND D.dataset_rating_id NOT IN (-1, -2, -5)
 ;
+
 CREATE OR REPLACE VIEW "public"."v_dataset_disposition"
 AS
 SELECT DS.Dataset_ID AS id,
@@ -145,12 +148,12 @@ SELECT DS.Dataset_ID AS id,
        InstName.instrument,
        DS.created,
        DS.operator_prn AS oper
-    FROM public.t_lc_cart AS LCC
+FROM public.t_lc_cart AS LCC
      INNER JOIN public.t_requested_run AS RRH
        ON LCC.ID = RRH.cart_id
      RIGHT OUTER JOIN public.t_dataset_state_name AS DSN
                       INNER JOIN public.t_dataset AS DS
-                        ON DSN.ds_state_id = DS.DS_state_ID
+                        ON DSN.Dataset_state_ID = DS.dataset_state_id
                       INNER JOIN public.t_instrument_name AS InstName
                         ON DS.instrument_id = InstName.Instrument_ID
                       INNER JOIN public.t_dataset_rating_name AS DRN
@@ -160,6 +163,7 @@ SELECT DS.Dataset_ID AS id,
        ON SPath.storage_path_id = DS.storage_path_ID
 WHERE (DS.dataset_rating_id = -10)
 ;
+
 CREATE OR REPLACE VIEW "public"."v_dataset_disposition_lite"
 AS
 SELECT ID,
@@ -175,8 +179,9 @@ SELECT ID,
        Instrument,
        Created,
        "Oper."
-    FROM V_Dataset_Disposition
+FROM V_Dataset_Disposition
 ;
+
 CREATE OR REPLACE VIEW "public"."v_dataset_list_report_2"
 AS
 SELECT DS.Dataset_ID AS id,
@@ -209,9 +214,9 @@ SELECT DS.Dataset_ID AS id,
        Org.organism,
        BTO.Tissue,
        DS.date_sort_key AS #DateSortKey
-    FROM public.t_dataset_state_name DSN
+FROM public.t_dataset_state_name DSN
      INNER JOIN public.t_dataset DS
-       ON DSN.ds_state_id = DS.DS_state_ID
+       ON DSN.Dataset_state_ID = DS.dataset_state_id
      INNER JOIN public.t_dataset_type_name DTN
        ON DS.dataset_type_ID = DTN.dataset_type_id
      LEFT OUTER JOIN public.t_cached_dataset_instruments DSInst
@@ -237,35 +242,6 @@ SELECT DS.Dataset_ID AS id,
 ;
 COMMENT ON VIEW "public"."v_dataset_list_report_2" IS 'Deprecated: RR.RDS_Blocking_Factor AS [Blocking Factor],. Deprecated: RR.RDS_Block AS [Block],. Deprecated: RR.RDS_Run_Order AS [Run Order],. Deprecated to improve performance: EPT.Abbreviation AS [EUS Proposal Type],. Deprecated: DASN.DASN_StateName AS [Archive State],. Deprecated: T_YesNo.Description AS [Inst. Data Purged],';
 
-CREATE OR REPLACE VIEW "public"."v_dataset_load"
-AS
-SELECT public.t_dataset.dataset,
-   public.t_experiments.experiment,
-   public.t_instrument_name.instrument,
-   public.t_dataset.created,
-   public.t_dataset_state_name.dataset_state AS state,
-   public.t_dataset_type_name.dataset_type AS type,
-   public.t_dataset.comment,
-   public.t_dataset.operator_prn AS operator,
-   public.t_dataset.well AS well_number,
-   public.t_dataset.separation_type AS secondary_sep,
-   public.t_dataset.folder_name,
-   public.t_dataset_rating_name.dataset_rating AS rating
-    FROM public.t_dataset INNER JOIN
-   public.t_dataset_state_name ON
-   public.t_dataset.DS_state_ID = public.t_dataset_state_name.ds_state_id INNER
-    JOIN
-   public.t_instrument_name ON
-   public.t_dataset.instrument_id = public.t_instrument_name.Instrument_ID
-    INNER JOIN
-   public.t_dataset_type_name ON
-   public.t_dataset.dataset_type_ID = public.t_dataset_type_name.dataset_type_id INNER
-    JOIN
-   public.t_experiments ON
-   public.t_dataset.Exp_ID = public.t_experiments.Exp_ID INNER JOIN
-   public.t_dataset_rating_name ON
-   public.t_dataset.dataset_rating_id = public.t_dataset_rating_name.dataset_rating_id
-;
 CREATE OR REPLACE VIEW "public"."v_analysis_job"
 AS
 SELECT AJ.job,
@@ -283,7 +259,7 @@ SELECT AJ.job,
        AJ.job_state_id AS state_id,
        AJ.priority AS priority,
        AJ.comment,
-       DS.DS_Comp_State AS comp_state,
+       -- Remove or update since skipped column: DS.DS_Comp_State AS comp_state,
        InstName.instrument_class AS inst_class,
        AJ.dataset_id,
        AJ.request_id,
@@ -303,7 +279,7 @@ SELECT AJ.job,
        CAST(AJ.processing_time_minutes AS decimal(9, 2)) AS runtime,
        AJ.special_processing,
        AJ.batch_id
-    FROM public.t_analysis_job AJ
+FROM public.t_analysis_job AJ
      INNER JOIN public.t_dataset DS
        ON AJ.dataset_id = DS.Dataset_ID
      INNER JOIN public.t_organisms O
@@ -319,6 +295,7 @@ SELECT AJ.job,
      INNER JOIN public.t_campaign C
        ON E.campaign_id = C.Campaign_ID
 ;
+
 CREATE OR REPLACE VIEW "public"."v_analysis_job_detail_report_2"
 AS
 SELECT AJ.job AS job_num,
@@ -428,12 +405,13 @@ FROM S_V_BTO_ID_to_Name AS BTO
        ON AJ.job = MTSPT.Job
      LEFT OUTER JOIN ( SELECT DMS_Job,
                               COUNT(*) AS PMTasks
-    FROM public.t_mts_peak_matching_tasks_cached AS PM
+                       FROM public.t_mts_peak_matching_tasks_cached AS PM
                        GROUP BY DMS_Job ) AS PMTaskCountQ
        ON PMTaskCountQ.DMS_Job = AJ.job
      LEFT OUTER JOIN public.t_dataset_archive AS DA
        ON DS.Dataset_ID = DA.dataset_id
 ;
+
 CREATE OR REPLACE VIEW "public"."v_analysis_job_entry"
 AS
 SELECT CAST(AJ.job AS varchar(32)) AS job,
@@ -457,7 +435,7 @@ SELECT CAST(AJ.job AS varchar(32)) AS job,
            ELSE 'No Export'
        END AS propagation_mode,
        AJPG.Group_Name AS associated_processor_group
-    FROM public.t_analysis_job_processor_group AJPG
+FROM public.t_analysis_job_processor_group AJPG
      INNER JOIN public.t_analysis_job_processor_group_associations AJPGA
        ON AJPG.ID = AJPGA.Group_ID
      RIGHT OUTER JOIN public.t_analysis_job AJ
@@ -472,12 +450,11 @@ SELECT CAST(AJ.job AS varchar(32)) AS job,
        ON AJPGA.job = AJ.job
 ;
 
-SELECT * FROM "public"."v_organism_export";
-SELECT * FROM "public"."v_eus_export_dataset_metadata";
-SELECT * FROM "public"."v_dataset_disposition";
-SELECT * FROM "public"."v_dataset_disposition_lite";
-SELECT * FROM "public"."v_dataset_list_report_2";
-SELECT * FROM "public"."v_dataset_load";
-SELECT * FROM "public"."v_analysis_job";
-SELECT * FROM "public"."v_analysis_job_detail_report_2";
-SELECT * FROM "public"."v_analysis_job_entry";
+SELECT * FROM "public"."v_organism_export" limit 2;
+SELECT * FROM "public"."v_eus_export_dataset_metadata" limit 2;
+SELECT * FROM "public"."v_dataset_disposition" limit 2;
+SELECT * FROM "public"."v_dataset_disposition_lite" limit 2;
+SELECT * FROM "public"."v_dataset_list_report_2" limit 2;
+SELECT * FROM "public"."v_analysis_job" limit 2;
+SELECT * FROM "public"."v_analysis_job_detail_report_2" limit 2;
+SELECT * FROM "public"."v_analysis_job_entry" limit 2;
