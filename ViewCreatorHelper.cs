@@ -852,7 +852,7 @@ namespace PgSqlViewCreatorHelper
                 if (dataLine.IndexOf("cross apply", StringComparison.OrdinalIgnoreCase) > 0)
                 {
                     warningMessages.Add("-- This view uses CROSS APPLY, which is not supported by PostgreSQL");
-                    warningMessages.Add("-- Consider using INNER JOIN LATERAL instead");
+                    warningMessages.Add("-- Consider using CROSS JOIN LATERAL instead");
                     warningMessages.Add("-- See also https://stackoverflow.com/a/35873193/1179467 and https://www.postgresql.org/docs/current/sql-select.html");
                     warningMessages.Add(string.Empty);
                     break;
