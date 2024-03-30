@@ -29,6 +29,8 @@ namespace TableColumnNameMapContainer
         /// </summary>
         private static readonly Regex mCamelCaseMatcher = new("(?<LowerLetter>[a-z])(?<UpperLetter>[A-Z])", RegexOptions.Compiled);
 
+        // ReSharper disable once GrammarMistakeInComment
+
         /// <summary>
         /// This is used to match expressions of the form
         /// WHERE identifier LIKE '[0-9]%'
@@ -306,6 +308,7 @@ namespace TableColumnNameMapContainer
 
             if (mLikeMatcher.IsMatch(workingCopy))
             {
+                // ReSharper disable once GrammarMistakeInComment
                 // Switch from LIKE to SIMILAR TO
                 return mLikeMatcher.Replace(workingCopy, "SIMILAR TO${ComparisonSpec}");
             }

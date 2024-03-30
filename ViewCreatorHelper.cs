@@ -292,6 +292,7 @@ namespace PgSqlViewCreatorHelper
                     {
                         var keyName = string.Format("{0}_{1}", item.OriginalColumnName, item.NewColumnName);
 
+                        // ReSharper disable once CanSimplifySetAddingWithSingleCall
                         if (columnRenames.Contains(keyName))
                             continue;
 
@@ -420,6 +421,8 @@ namespace PgSqlViewCreatorHelper
 
                 foreach (var item in tableNameMapSynonyms)
                 {
+                    // ReSharper disable once CanSimplifySetAddingWithSingleCall
+
                     if (item.Key.StartsWith("V_", StringComparison.OrdinalIgnoreCase) &&
                         item.Value.Equals("<skip>", StringComparison.OrdinalIgnoreCase) &&
                         !viewsToSkip.Contains(item.Key))
