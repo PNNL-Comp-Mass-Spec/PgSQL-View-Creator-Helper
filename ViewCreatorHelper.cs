@@ -22,7 +22,7 @@ namespace PgSqlViewCreatorHelper
         private readonly Regex mColumnCharNonStandardMatcher = new("[^a-z0-9_]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
         /// <summary>
-        /// This matches all of the commas in a line
+        /// This matches the commas in a line
         /// </summary>
         private readonly Regex mCommaMatcher = new(",", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -879,7 +879,7 @@ namespace PgSqlViewCreatorHelper
 
             // Look for table names in cachedLines, updating as appropriate
             // First look for the line that starts with "FROM" and then start looking for table names
-            // Next, process all of the cached lines
+            // Next, process the cached lines
 
             var fromTableFound = false;
 

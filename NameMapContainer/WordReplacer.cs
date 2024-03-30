@@ -66,7 +66,7 @@ namespace TableColumnNameMapContainer
             ReplacementText = replacementText;
             DefaultSchema = defaultSchema;
 
-            // Configure the matcher to match whole words, and to be case insensitive
+            // Configure the matcher to match whole words, and to be case-insensitive
             mWordMatcher = new Regex(@"\b" + textToFind + @"\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
             if (string.IsNullOrWhiteSpace(defaultSchema))
@@ -86,7 +86,7 @@ namespace TableColumnNameMapContainer
         }
 
         /// <summary>
-        /// Look for TextToFind in dataLine (matching whole words, case insensitive)
+        /// Look for TextToFind in dataLine (matching whole words, case-insensitive)
         /// If found, replace with ReplacementText
         /// </summary>
         /// <param name="dataLine">Text to search</param>
