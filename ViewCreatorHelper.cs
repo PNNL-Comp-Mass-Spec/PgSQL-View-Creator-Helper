@@ -12,7 +12,7 @@ namespace PgSqlViewCreatorHelper
     {
         // ReSharper disable CommentTypo
 
-        // Ignore Spelling: dbo, dms, dpkg, logdms, logcap, logsw, mc, nvarchar, ont, pc, sw, varchar
+        // Ignore Spelling: dbo, dms, dpkg, logdms, logcap, logsw, mc, nvarchar, ont, pc, Sql, sw, varchar
 
         // ReSharper restore CommentTypo
 

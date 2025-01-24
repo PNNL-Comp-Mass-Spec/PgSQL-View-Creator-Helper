@@ -9,6 +9,8 @@ namespace TableColumnNameMapContainer
 {
     public class NameMapReader : EventNotifier
     {
+        // Ignore Spelling: Sql
+
         /// <summary>
         /// Match any character that is not a letter, number, or underscore
         /// </summary>
