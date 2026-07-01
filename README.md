@@ -182,3 +182,8 @@ in compliance with the License.  You may obtain a copy of the License at
 https://opensource.org/licenses/BSD-2-Clause
 
 Copyright 2019 Battelle Memorial Institute
+
+# Archive Notice
+
+This repository has been archived and is no longer maintained.
+The code is provided for historical reference and may contain unpatched or unknown vulnerabilities.
